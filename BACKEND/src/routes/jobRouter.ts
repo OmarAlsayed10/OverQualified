@@ -16,7 +16,7 @@ import {
   updateWorkspaceController,
   generateScreeningAnswersController,
   createCustomMatchController,
-} from "../controllers/jobRadarController";
+} from "../controllers/jobRadar";
 import {
   getJobCatalogController,
   submitRoleSuggestionController,
