@@ -162,6 +162,37 @@ describe("interviewCoachService", () => {
     expect(outcome.session.turns[0].feedback).toMatchObject({ score: 2, strengths: [] });
   });
 
+  test("normalizes provider typography back to verbatim answer evidence", async () => {
+    (prisma.document.findFirst as jest.Mock).mockResolvedValue(
+      documentRecord(JSON.stringify(storedSession)),
+    );
+    mockedGroqChat.mockResolvedValueOnce({
+      choices: [{ message: { content: JSON.stringify({
+        score: 4,
+        strengths: [{
+          feedback: "Explained a durable trade-off.",
+          evidenceExcerpt: "database‑backed key",
+        }],
+        improvements: [],
+        nextQuestion: "How did you validate the result?",
+      }) } }],
+    } as never);
+    (prisma.document.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+    (prisma.document.findUniqueOrThrow as jest.Mock).mockResolvedValue(documentRecord("updated"));
+
+    const outcome = await submitInterviewAnswer(
+      userId,
+      sessionId,
+      "I chose a database-backed key so retries survived service restarts.",
+    );
+
+    expect(outcome.kind).toBe("success");
+    if (outcome.kind !== "success") throw new Error("Expected a successful answer.");
+    expect(outcome.session.turns[0].feedback.strengths[0].evidenceExcerpt)
+      .toBe("database-backed key");
+    expect(outcome.session.turns[0].feedback).not.toHaveProperty("nextQuestion");
+  });
+
   test("rejects feedback that quotes evidence absent from the answer", async () => {
     (prisma.document.findFirst as jest.Mock).mockResolvedValue(
       documentRecord(JSON.stringify(storedSession)),

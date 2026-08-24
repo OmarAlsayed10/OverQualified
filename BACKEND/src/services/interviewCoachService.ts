@@ -231,16 +231,38 @@ const safeFeedback = (
   answer: string,
   language: "en" | "ar",
 ): InterviewFeedback => {
-  if (answerIsSubstantive(answer)) return feedback;
+  const answerFeedback = {
+    score: feedback.score,
+    strengths: feedback.strengths,
+    improvements: feedback.improvements,
+  };
+  if (answerIsSubstantive(answer)) return answerFeedback;
   return {
+    ...answerFeedback,
     score: Math.min(2, feedback.score),
     strengths: [],
     improvements: [shortAnswerImprovement(language), ...feedback.improvements].slice(0, 3),
   };
 };
 
-const feedbackIsGrounded = (feedback: InterviewFeedback, answer: string) =>
-  feedback.strengths.every((strength) => answer.includes(strength.evidenceExcerpt));
+const searchableEvidence = (text: string) => text
+  .replace(/[‐‑‒–—]/gu, "-")
+  .replace(/[‘’]/gu, "'")
+  .replace(/\u00a0/gu, " ");
+
+const verbatimEvidence = (source: string, excerpt: string) => {
+  const index = searchableEvidence(source).indexOf(searchableEvidence(excerpt));
+  return index === -1 ? null : source.slice(index, index + excerpt.length);
+};
+
+const groundedFeedback = (feedback: InterviewFeedback, answer: string): InterviewFeedback | null => {
+  const strengths = feedback.strengths.map((strength) => {
+    const evidenceExcerpt = verbatimEvidence(answer, strength.evidenceExcerpt);
+    return evidenceExcerpt ? { ...strength, evidenceExcerpt } : null;
+  });
+  if (strengths.some((strength) => strength === null)) return null;
+  return { ...feedback, strengths: strengths as InterviewFeedback["strengths"] };
+};
 
 const questionIsNew = (session: StoredInterviewSession, question: string) => {
   const normalizedQuestion = question.trim().toLocaleLowerCase();
@@ -257,9 +279,20 @@ const interviewHistory = (session: StoredInterviewSession, answer?: string) => J
   currentAnswer: answer,
 });
 
-const reportIsGrounded = (report: InterviewReport, answers: string) =>
-  [...report.strengths, ...report.improvements]
-    .every((finding) => answers.includes(finding.evidenceExcerpt));
+const groundedReport = (report: InterviewReport, answers: string): InterviewReport | null => {
+  const groundFindings = (findings: InterviewReport["strengths"]) => findings.map((finding) => {
+    const evidenceExcerpt = verbatimEvidence(answers, finding.evidenceExcerpt);
+    return evidenceExcerpt ? { ...finding, evidenceExcerpt } : null;
+  });
+  const strengths = groundFindings(report.strengths);
+  const improvements = groundFindings(report.improvements);
+  if ([...strengths, ...improvements].some((finding) => finding === null)) return null;
+  return {
+    ...report,
+    strengths: strengths as InterviewReport["strengths"],
+    improvements: improvements as InterviewReport["improvements"],
+  };
+};
 
 async function firstQuestion(input: StartInterviewInput, cvContext: string): Promise<string> {
   const candidatePayload = untrustedCandidatePayload(cvContext, input.targetRole, input.jobDescription);
@@ -282,8 +315,8 @@ async function evaluateAnswer(
     responseFormat: answerResponseFormat,
     schema: answerSchema,
   });
-  const feedback = safeFeedback(response, answer, session.language);
-  if (!feedbackIsGrounded(feedback, answer) || !questionIsNew(session, response.nextQuestion)) {
+  const feedback = groundedFeedback(safeFeedback(response, answer, session.language), answer);
+  if (!feedback || !questionIsNew(session, response.nextQuestion)) {
     throw new Error("The interview feedback contained unsupported evidence.");
   }
   return { feedback, nextQuestion: response.nextQuestion };
@@ -299,12 +332,13 @@ async function evaluateFinalAnswer(
     responseFormat: finalAnswerResponseFormat,
     schema: finalAnswerSchema,
   });
-  const feedback = safeFeedback(response, answer, session.language);
+  const feedback = groundedFeedback(safeFeedback(response, answer, session.language), answer);
   const answers = [...session.turns.map((turn) => turn.answer), answer].join("\n");
-  if (!feedbackIsGrounded(feedback, answer) || !reportIsGrounded(response.report, answers)) {
+  const report = groundedReport(response.report, answers);
+  if (!feedback || !report) {
     throw new Error("The interview report contained unsupported evidence.");
   }
-  return { feedback, report: response.report };
+  return { feedback, report };
 }
 
 async function generateReport(session: StoredInterviewSession): Promise<InterviewReport> {
@@ -315,10 +349,9 @@ async function generateReport(session: StoredInterviewSession): Promise<Intervie
     schema: z.object({ report: interviewReportSchema }).strip(),
   });
   const answers = session.turns.map((turn) => turn.answer).join("\n");
-  if (!reportIsGrounded(response.report, answers)) {
-    throw new Error("The interview report contained unsupported evidence.");
-  }
-  return response.report;
+  const report = groundedReport(response.report, answers);
+  if (!report) throw new Error("The interview report contained unsupported evidence.");
+  return report;
 }
 
 async function interviewSource(userId: string, input: StartInterviewInput) {
