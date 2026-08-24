@@ -6,10 +6,17 @@ import { track } from "../../../lib/analytics";
 
 export const requestLanguage = () => (i18n.language.startsWith("ar") ? "ar" : "en");
 
+interface BuilderCvAnalysisSource {
+  formData: unknown;
+  sectionOrder: string[];
+  template: string;
+  fontScale: number;
+}
+
 export const cvAnalyzeAction = createAsyncThunk(
   "cvAnalyze",
   async function featchAnalysisCV(
-    { file, cvId, cvText, level, language }: { file?: File; cvId?: string; cvText?: string; level?: string; language?: string },
+    { file, cvId, cvText, builderCv, level, language }: { file?: File; cvId?: string; cvText?: string; builderCv?: BuilderCvAnalysisSource; level?: string; language?: string },
     { rejectWithValue }
   ) {
     try {
@@ -17,6 +24,7 @@ export const cvAnalyzeAction = createAsyncThunk(
       if (file) formData.append("cv", file);
       if (cvId) formData.append("cvId", cvId);
       if (cvText) formData.append("cvText", cvText);
+      if (builderCv) formData.append("builderCv", JSON.stringify(builderCv));
       if (level) formData.append("level", level);
       formData.append("language", language ?? requestLanguage());
       const response = await axios.post(AI_ENDPOINTS.analyze, formData, {
@@ -24,7 +32,7 @@ export const cvAnalyzeAction = createAsyncThunk(
         withCredentials: true,
       });
       window.dispatchEvent(new Event("quota:refresh"));
-      track("analysis_run", { source: file ? "upload" : cvId ? "saved_cv" : "text" });
+      track("analysis_run", { source: file ? "upload" : cvId ? "saved_cv" : builderCv ? "builder" : "text" });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.message) {

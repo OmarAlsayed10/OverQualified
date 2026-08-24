@@ -19,6 +19,7 @@ export interface LevelContext {
 }
 
 export interface SectionImprovement {
+  sectionKey: 'summary' | 'experience' | 'education' | 'projects' | 'skills' | 'formatting' | 'other';
   section: string;
   suggestion: string;
   evidence: {

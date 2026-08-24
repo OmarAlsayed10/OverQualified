@@ -7,18 +7,24 @@ const navbar = {
     height: '56px',
     justifyContent: 'center',
   },
+  toolbar: {
+    minHeight: '56px',
+    px: { xs: 1.5, sm: 2, lg: 3 },
+  },
   logoDesktop: {
-    mr: 2,
-    display: { xs: 'none', md: 'flex' },
+    marginInlineEnd: 2,
+    display: { xs: 'none', lg: 'flex' },
     color: COLORS.textPrimary,
     textDecoration: 'none',
     fontWeight: 'bold',
     fontSize: '20px',
     cursor: 'pointer',
+    flexShrink: 0,
+    alignItems: 'center',
     fontFamily: '"DM Serif Display", serif',
   },
   logoMobile: {
-    ml: 2,
+    marginInlineStart: 1,
     display: 'flex',
     flexGrow: 1,
     color: COLORS.textPrimary,
@@ -27,10 +33,10 @@ const navbar = {
     alignItems: 'center',
     fontFamily: '"DM Serif Display", serif',
   },
-  mobileMenuBox: { flexGrow: 1, display: { xs: 'flex', md: 'none' } },
+  mobileMenuBox: { flexGrow: 1, minWidth: 0, alignItems: 'center', display: { xs: 'flex', lg: 'none' } },
   menuIcon: { color: COLORS.textPrimary },
-  brandIcon: { color: COLORS.primary, mr: 1, fontSize: '30px' },
-  brandIconSmall: { color: COLORS.primary, mr: 1 },
+  brandIcon: { color: COLORS.primary, marginInlineEnd: 1, fontSize: '30px' },
+  brandIconSmall: { color: COLORS.primary, marginInlineEnd: 1 },
 } as const;
 
 export default navbar;

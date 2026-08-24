@@ -21,6 +21,7 @@ export const AI_ENDPOINTS = {
   careerMatch: `${API_BASE_URL}/api/ai/career-match`,
   careerMatchLimits: `${API_BASE_URL}/api/ai/career-match/limits`,
   adjustCV: `${API_BASE_URL}/api/ai/adjust-cv`,
+  improveBuilderCV: `${API_BASE_URL}/api/ai/improve-builder-cv`,
   exportAdjustedCV: `${API_BASE_URL}/api/ai/export-adjusted-cv`,
   cvChat: `${API_BASE_URL}/api/ai/cv-chat`,
   interviewAnswers: `${API_BASE_URL}/api/ai/interview-answers`,

@@ -16,7 +16,7 @@ const FooterBrand = () => {
           <AutoAwesomeIcon sx={footerBrand.logoIcon} />
         </Box>
         <Typography variant="h6" fontWeight={700} sx={footerBrand.logoText}>
-          Muhtaraf
+          OverQualified
         </Typography>
       </Box>
 

@@ -48,7 +48,7 @@ export const blogSitemapController = async (
   const urls = blogs
     .map(
       (b) =>
-        `<url><loc>${xmlEscape(`${origin}/Blogs/${b.slug}`)}</loc><lastmod>${b.updatedAt.toISOString()}</lastmod></url>`
+        `<url><loc>${xmlEscape(`${origin}/blogs/${b.slug}`)}</loc><lastmod>${b.updatedAt.toISOString()}</lastmod></url>`
     )
     .join("");
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { groqChat } from "../lib/groqChat";
+import { groqChat, MODELS } from "../lib/groqChat";
 import { InvalidAiResponseError, parseAiResponse } from "../lib/aiResponseValidation";
-import { coerceFormData, BuilderFormData } from "./cvParseService";
+import { coerceFormData, BuilderFormData, SkillCategory } from "./cvParseService";
 import { cvOutputLanguage } from "./AIWritingService";
 
 export interface ChatMessage {
@@ -34,11 +34,15 @@ const conversationalBuildResponseSchema = z.object({
       description: z.string(),
     })),
     skills: z.object({
-      skills: z.array(z.string()),
-      languages: z.string(),
+      skillCategories: z.array(z.object({
+        name: z.string(),
+        skills: z.array(z.string()),
+      })).optional(),
+      skills: z.array(z.string()).optional(),
+      languages: z.string().optional().default(""),
       certifications: z.array(z.object({
-        name: z.string(), issuer: z.string(), date: z.string(), url: z.string(), description: z.string(),
-      })),
+        name: z.string(), issuer: z.string().optional().default(""), date: z.string().optional().default(""), url: z.string().optional().default(""), description: z.string().optional().default(""),
+      })).optional().default([]),
     }),
   }),
   reply: z.string().trim().min(1),
@@ -56,6 +60,33 @@ const appendNewEntries = <T>(current: T[], proposed: T[], identity: (entry: T) =
   return [...current, ...proposed.filter((entry) => !existingIdentities.has(identity(entry)))];
 };
 
+const mergeSkillCategories = (
+  current: SkillCategory[],
+  proposed: SkillCategory[],
+): SkillCategory[] => {
+  if (!proposed || proposed.length === 0) return current;
+  if (!current || current.length === 0) return proposed;
+
+  const result = current.map((c) => ({ ...c, skills: [...c.skills] }));
+  proposed.forEach((proposedCat) => {
+    const existing = result.find(
+      (c) => c.name.trim().toLowerCase() === proposedCat.name.trim().toLowerCase(),
+    );
+    if (existing) {
+      const existingLower = new Set(existing.skills.map((s) => s.toLowerCase()));
+      proposedCat.skills.forEach((s) => {
+        if (!existingLower.has(s.toLowerCase())) {
+          existing.skills.push(s);
+          existingLower.add(s.toLowerCase());
+        }
+      });
+    } else {
+      result.push({ ...proposedCat, skills: [...proposedCat.skills] });
+    }
+  });
+  return result;
+};
+
 const mergeAdditiveUpdate = (current: BuilderFormData, proposed: BuilderFormData): BuilderFormData => ({
   personalInfo: Object.fromEntries(
     Object.entries(current.personalInfo).map(([field, currentText]) => [
@@ -71,7 +102,13 @@ const mergeAdditiveUpdate = (current: BuilderFormData, proposed: BuilderFormData
   ),
   projects: appendNewEntries(current.projects, proposed.projects, (entry) => normalizedIdentity([entry.name])),
   skills: {
-    skills: appendNewEntries(current.skills.skills, proposed.skills.skills, (skill) => normalizedIdentity([skill])),
+    skillCategories: mergeSkillCategories(
+      current.skills.skillCategories || [],
+      proposed.skills.skillCategories || [],
+    ),
+    skills: appendNewEntries(current.skills.skills || [], proposed.skills.skills || [], (skill) =>
+      normalizedIdentity([skill]),
+    ),
     languages: current.skills.languages || proposed.skills.languages,
     certifications: appendNewEntries(current.skills.certifications, proposed.skills.certifications, (credential) =>
       normalizedIdentity([credential.name, credential.issuer]),
@@ -163,7 +200,7 @@ Return ONLY this JSON:
 }`;
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     messages: [
       { role: "system", content: "You are a friendly, expert CV-building assistant. You MUST output valid JSON only. Never fabricate facts.\n\nALWAYS follow these ATS (Applicant Tracking System) rules:\n1. ACTION VERBS: Start every bullet with strong verbs (e.g., Led, Developed, Optimized, Implemented, Designed, Managed, Delivered).\n2. QUANTIFY: Include metrics (%, $, numbers, time saved) only where the user supplied them. Never estimate or invent a number.\n3. NO PRONOUNS: Avoid I, me, my, we, our.\n4. FORMATTING: Use simple text only. No icons, tables, or special characters. Use plain '- ' for bullets, one bullet per line separated by a newline escape inside the JSON string.\n5. CONCISENESS: Max 3-4 bullets per role/project. Professional summary: 2-3 sentences max.\n6. KEYWORDS: Use industry-standard terms naturally without keyword stuffing.\n7. CONTENT: Focus on technical/soft skills, relevant coursework, honors, and GPA for education." },
       { role: "user", content: userPrompt },

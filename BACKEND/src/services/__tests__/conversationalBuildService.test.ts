@@ -2,7 +2,10 @@ import { InvalidAiResponseError } from "../../lib/aiResponseValidation";
 import { groqChat } from "../../lib/groqChat";
 import { conversationalBuild } from "../conversationalBuildService";
 
-jest.mock("../../lib/groqChat", () => ({ groqChat: jest.fn() }));
+jest.mock("../../lib/groqChat", () => ({
+  groqChat: jest.fn(),
+  MODELS: { versatile: "test-model" },
+}));
 
 const mockedGroqChat = groqChat as jest.MockedFunction<typeof groqChat>;
 
@@ -48,8 +51,15 @@ describe("conversationalBuild AI response integrity", () => {
     );
   });
 
-  test("returns a schema-complete provider update", async () => {
+  test("normalizes a legacy flat skill update into a category", async () => {
     const formData = { ...currentFormData, skills: { ...currentFormData.skills, skills: ["TypeScript"] } };
+    const categorizedFormData = {
+      ...formData,
+      skills: {
+        ...formData.skills,
+        skillCategories: [{ name: "Other Skills", skills: ["TypeScript"] }],
+      },
+    };
     mockedGroqChat.mockResolvedValueOnce({
       choices: [{ message: { content: JSON.stringify({
         changeIntent: "add",
@@ -60,7 +70,7 @@ describe("conversationalBuild AI response integrity", () => {
     } as never);
 
     await expect(conversationalBuild(messages, currentFormData)).resolves.toEqual({
-      formData,
+      formData: categorizedFormData,
       reply: "Added TypeScript to your skills.",
     });
   });

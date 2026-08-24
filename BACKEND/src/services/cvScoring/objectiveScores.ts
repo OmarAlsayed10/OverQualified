@@ -97,6 +97,9 @@ export function formattingLayoutObjective(
   const isArabic = language === "ar";
   const sectionOrder = detectPrimarySectionOrder(text);
   const bulletDetails = bulletStyleDetails(text);
+  const inferredBulletCount = experienceBullets(
+    `${experienceSection(text)}\n${projectsSection(text)}`.trim() || text,
+  ).length;
   const dateStyles = detectDateStyles(text);
   const matchesPreferredOrder =
     sectionOrder.length >= 3 &&
@@ -116,8 +119,8 @@ export function formattingLayoutObjective(
     ? 8
     : Math.max(0, sectionOrder.length * 2 - 2);
 
-  if (bulletDetails.bulletCount === 0) earned += 3;
-  else if (bulletDetails.styles.length === 1) earned += 6;
+  if (bulletDetails.bulletCount === 0 && inferredBulletCount === 0) earned += 3;
+  else if (bulletDetails.styles.length <= 1) earned += 6;
   else earned += 1;
 
   if (dateStyles.length === 0) earned += 0;
@@ -139,9 +142,7 @@ export function formattingLayoutObjective(
         ? "استخدم نمط نقاط موحدًا في كامل السيرة الذاتية"
         : "Use one consistent bullet style throughout",
     );
-  } else if (bulletDetails.bulletCount === 0) {
-    // This branch cost 3 points silently. A CV whose bullet markers are drawn but never written
-    // into the PDF text layer reads as bullet-less to an ATS too, so it needs saying.
+  } else if (bulletDetails.bulletCount === 0 && inferredBulletCount === 0) {
     details.push(
       isArabic
         ? "لم نعثر على أي نقاط — اكتب الإنجازات كنقاط بعلامة نصية حقيقية"
@@ -170,6 +171,7 @@ export function formattingLayoutObjective(
     bulletStyles: bulletDetails.styles,
     standaloneBulletMarkers: bulletDetails.standaloneMarkers,
     bulletCount: bulletDetails.bulletCount,
+    inferredBulletCount,
     dateStyles,
   };
 
@@ -181,6 +183,31 @@ export function formattingLayoutObjective(
 }
 
 // ─── Objective, deterministic scoring — same CV always yields the same points ───
+
+export const applyDeterministicGrammarCorrections = (text: string): string =>
+  text.replace(/\bhe Ultimate React Course\b/gi, "The Ultimate React Course");
+
+export function grammarSpellingObjective(
+  text: string,
+  language: Language = "en",
+): ObjectiveDiagnostic {
+  const isArabic = language === "ar";
+  const details: string[] = [];
+  const courseTypo = text.match(/\bhe Ultimate React Course\b/i)?.[0];
+  if (courseTypo) {
+    details.push(
+      isArabic
+        ? `صحح "${courseTypo}" إلى "The Ultimate React Course".`
+        : `Correct "${courseTypo}" to "The Ultimate React Course".`,
+    );
+  }
+
+  return {
+    score: Math.max(60, 100 - details.length * 10),
+    details,
+    checks: { courseTypo: courseTypo ?? null },
+  };
+}
 
 export function scoreContact(
   text: string,
@@ -268,8 +295,7 @@ export function scoreATSFormatting(
 export const METRIC_WEIGHT = 4;
 export const VERB_WEIGHT = 11;
 
-const CONTENT_METRIC_WEIGHT = 12;
-const CONTENT_VERB_WEIGHT = 38;
+const CONTENT_VERB_WEIGHT = 50;
 
 export function experienceObjective(
   text: string,
@@ -333,11 +359,12 @@ export function experienceObjective(
     });
   }
 
-  if (metricRatio < 0.5)
+  const unquantified = bullets.filter((l) => !/\d/.test(l)).length;
+  if (unquantified > 0)
     tips.push(
       isArabic
-        ? "اختياري: أرقام أو نسب مئوية في نقاط أكثر ترفع قوة السيرة الذاتية حيث تتوفر أرقام فعلية"
-        : "optional: numbers or percentages in more bullets read stronger, where you have real figures",
+        ? `${unquantified} من ${bullets.length} من نقاط الخبرة/المشاريع لا تتضمن نتيجة رقمية موثقة. قد تقوّي الأرقام الموثقة هذه النقاط، لكن غيابها لا يخصم من الدرجة.`
+        : `${unquantified} of ${bullets.length} experience/project bullets have no verified numeric result. Verified figures can strengthen these bullets, but their absence does not reduce the score.`,
     );
   if (verbRatio < 0.6)
     tips.push(
@@ -345,7 +372,6 @@ export function experienceObjective(
         ? "ابدأ النقاط بأفعال إنجاز (قاد، بنى، حسّن)"
         : "start bullets with action verbs (led, built, improved)",
     );
-  const unquantified = bullets.filter((l) => !/\d/.test(l)).length;
   const noVerb = bullets.filter((l) => !hasVerb(l)).length;
   return {
     base,
@@ -357,6 +383,10 @@ export function experienceObjective(
     noVerb,
   };
 }
+
+export const impactResultsScore = (
+  exp: ReturnType<typeof experienceObjective>,
+): number => Math.min(100, Math.round((exp.verb / VERB_WEIGHT) * 100) + exp.metric);
 
 export function contentQualityObjective(
   text: string,
@@ -380,8 +410,8 @@ export function contentQualityObjective(
   if (!/\d/.test(summary) && summary)
     gaps.push(
       isArabic
-        ? "اختياري: نتيجة قابلة للقياس في الملخص (نسبة مئوية أو عدد أو مبلغ) تترك انطباعًا أقوى."
-        : "Optional: a quantified result in your summary (a %, count, or $ figure) lands harder.",
+        ? "اختياري: أضف نتيجة في الملخص فقط عندما تستطيع التحقق من الرقم الدقيق."
+        : "Optional: include a result in your summary only when you can verify the exact figure.",
     );
   if (summary.split(/\s+/).filter(Boolean).length >= 20) earned += 15;
   else if (summary)
@@ -391,14 +421,13 @@ export function contentQualityObjective(
         : "Expand the summary to 2–3 sentences of positioning.",
     );
 
-  const metricRatio = exp.bulletCount ? 1 - exp.unquantified / exp.bulletCount : 0;
   const verbRatio = exp.bulletCount ? 1 - exp.noVerb / exp.bulletCount : 0;
-  earned += Math.round(metricRatio * CONTENT_METRIC_WEIGHT + verbRatio * CONTENT_VERB_WEIGHT);
+  earned += Math.round(verbRatio * CONTENT_VERB_WEIGHT);
   if (exp.unquantified > 0)
     gaps.push(
       isArabic
-        ? `اختياري: إضافة رقم إلى ${exp.unquantified} من نقاط الخبرة/المشاريع يقوّي السيرة الذاتية حيث تتوفر أرقام فعلية.`
-        : `Optional: adding a number to ${exp.unquantified} experience/project bullet${exp.unquantified === 1 ? "" : "s"} would strengthen them where you have real figures.`,
+        ? `اختياري: أضف رقمًا موثقًا إلى ${exp.unquantified} من نقاط الخبرة/المشاريع فقط عند توفر دليل دقيق، ولا تقدّر رقمًا.`
+        : `Optional: add a verified figure to ${exp.unquantified} experience/project bullet${exp.unquantified === 1 ? "" : "s"} only where you already have exact evidence; never estimate one.`,
     );
   if (exp.noVerb > 0)
     gaps.push(

@@ -30,6 +30,7 @@ import i18n from '../i18n';
 import axios from 'axios';
 import { JOB_ENDPOINTS } from '../constants/endpoints';
 import { COLORS } from "../theme/tokens";
+import CvVariantResults, { type CvVariant } from '../features/JobRadar/components/CvVariantResults';
 
 interface ChecklistItem {
   id: string;
@@ -148,6 +149,24 @@ const ApplicationWorkspacePage = () => {
     triggerAutoSave({ checklist: updated });
   };
 
+  const recordVariantOutcome = async (variantId: string, outcome: 'sent' | 'response') => {
+    try {
+      const response = await axios.patch(
+        JOB_ENDPOINTS.variantOutcome(variantId),
+        { [outcome]: true },
+        { withCredentials: true },
+      );
+      setWorkspaceData((currentWorkspace: any) => ({
+        ...currentWorkspace,
+        cvVariants: currentWorkspace.cvVariants.map((variant: CvVariant) =>
+          variant.id === variantId ? response.data.variant : variant
+        ),
+      }));
+    } catch {
+      setCopySnack(t('Could not update variant outcome.'));
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -170,6 +189,7 @@ const ApplicationWorkspacePage = () => {
   }
 
   const { match, userProfile, primaryCv } = workspaceData;
+  const cvVariants: CvVariant[] = workspaceData.cvVariants || [];
 
   return (
     <Box sx={{ bgcolor: COLORS.surfaceSubtle, minHeight: '100vh', pb: 10 }}>
@@ -351,7 +371,19 @@ const ApplicationWorkspacePage = () => {
                 </Box>
               )}
 
-              {/* Application Checklist */}
+              {activeTab === 2 && (
+                <CvVariantResults
+                  variants={cvVariants}
+                  selectedVariantId={selectedCvVariant}
+                  onSelect={(variantId) => {
+                    setSelectedCvVariant(variantId);
+                    triggerAutoSave({ selectedCvVariant: variantId });
+                  }}
+                  onRecord={recordVariantOutcome}
+                  onCopy={copyToClipboard}
+                />
+              )}
+
               <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <ChecklistIcon color="primary" fontSize="small" />

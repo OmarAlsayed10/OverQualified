@@ -1,6 +1,6 @@
-# Muhtaraf
+# OverQualified
 
-Muhtaraf is a full-stack resume and career-assistance platform. It helps users build structured CVs, import existing resume content, analyze resumes, compare a CV with a vacancy, improve written content with AI, and track relevant job opportunities.
+OverQualified is a full-stack resume and career-assistance platform. It helps users build structured CVs, import existing resume content, analyze resumes, compare a CV with a vacancy, improve written content with AI, and track relevant job opportunities.
 
 The application includes a browser-based CV builder with live templates and PDF export, an Express API for authentication and career tools, and PostgreSQL storage for users, CVs, documents, job matches, plans, and payments.
 
@@ -51,7 +51,7 @@ For a detailed, user-friendly guide explaining every feature of the website, ple
 ## Repository structure
 
 ```text
-Muhtaraf/
+OverQualified/
 |-- FRONTEND/   React application, CV builder, templates, pages, and state
 |-- BACKEND/    Express API, Prisma schema, services, routes, and middleware
 `-- README.md
@@ -80,7 +80,7 @@ Create `BACKEND/.env` before starting the API:
 
 ```dotenv
 PORT=3001
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/muhtaraf
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/overqualified
 CLIENT_URL=http://localhost:5173
 
 JWT_SECRET_Key=replace_me
@@ -110,7 +110,7 @@ EMAIL_USER=replace_me
 EMAIL_PASS=replace_me
 # Optional. Set when the SMTP login is not the sending identity (SES, Resend,
 # Postmark). The From domain must match the DKIM-signing domain or DMARC fails.
-# EMAIL_FROM="Muhtaraf <no-reply@yourdomain.com>"
+# EMAIL_FROM="OverQualified <no-reply@yourdomain.com>"
 # Optional. Only for a self-hosted SMTP host that does not sign for you.
 # EMAIL_DKIM_DOMAIN=yourdomain.com
 # EMAIL_DKIM_SELECTOR=mail

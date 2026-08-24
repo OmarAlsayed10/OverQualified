@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
+import SkillCategoryList from "./SkillCategoryList";
 import { certificationDetail } from "./certificationText";
 
 const PAGE_HEIGHT = 1123;
@@ -29,6 +30,7 @@ const PhotoCV = ({
   photo,
   summary,
   skills,
+  skillCategories,
   languages = [],
   certifications = [],
   experience = [],
@@ -40,6 +42,7 @@ const PhotoCV = ({
   activePage = 1,
 }: any) => {
   const { t } = useTranslation();
+  const hasSkills = Boolean((skillCategories && skillCategories.length > 0) || skills);
   const contactLines = [email, phone, location, linkedin, github, portfolio].filter(Boolean);
 
   const fullContent = (
@@ -141,10 +144,15 @@ const PhotoCV = ({
         </Box>
       )}
 
-      {skills && (
+      {hasSkills && (
         <Box data-cv-section="skills" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('skills') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Skills')}</Typography>
-          <Typography sx={{ color: "#1a1a18", fontSize: "0.95rem" }}>{skills}</Typography>
+          <SkillCategoryList
+            categories={skillCategories}
+            skills={skills}
+            categorySx={{ color: "#1a1a18", fontSize: "0.95rem", lineHeight: 1.5 }}
+            labelSx={{ fontWeight: 600, color: "#1a1a18" }}
+          />
         </Box>
       )}
 

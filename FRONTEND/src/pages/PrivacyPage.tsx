@@ -37,7 +37,7 @@ export default function PrivacyPage() {
     },
     {
       title: "8. Your Rights",
-      body: `Depending on your location, you may have rights to: access the personal data we hold about you; correct inaccurate data; request deletion of your data; object to or restrict processing; and export your data in a portable format. To exercise any of these rights, contact us at privacy@muhtaraf.com.`,
+      body: `Depending on your location, you may have rights to: access the personal data we hold about you; correct inaccurate data; request deletion of your data; object to or restrict processing; and export your data in a portable format. To exercise any of these rights, contact us at privacy@overqualified.com.`,
     },
     {
       title: "9. Children's Privacy",
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
     },
     {
       title: "12. Contact Us",
-      body: `If you have any questions or concerns about this Privacy Policy or how we handle your data, please contact our Data Protection team at: privacy@muhtaraf.com`,
+      body: `If you have any questions or concerns about this Privacy Policy or how we handle your data, please contact our Data Protection team at: privacy@overqualified.com`,
     },
   ];
 

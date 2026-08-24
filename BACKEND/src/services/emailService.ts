@@ -57,7 +57,7 @@ class EmailService {
     await this.transporter.sendMail({
       // On a relay the authenticated user is not the sending identity, and a
       // From that does not align with the signing domain fails DMARC.
-      from: process.env.EMAIL_FROM || `"Muhtaraf" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"OverQualified" <${process.env.EMAIL_USER}>`,
       disableFileAccess: true,
       disableUrlAccess: true,
       ...payload,
@@ -67,7 +67,7 @@ class EmailService {
   async sendOTP(to: string, firstName: string, otp: string): Promise<void> {
     await this.send({
       to,
-      subject: "Muhtaraf — Your Verification Code",
+      subject: "OverQualified — Your Verification Code",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Hello ${esc(firstName)},</h2>
@@ -88,7 +88,7 @@ class EmailService {
   ): Promise<void> {
     await this.send({
       to,
-      subject: "Muhtaraf — Reset Your Password",
+      subject: "OverQualified — Reset Your Password",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Hello ${esc(firstName)},</h2>
@@ -105,7 +105,7 @@ class EmailService {
   async sendWelcome(to: string, firstName: string): Promise<void> {
     await this.send({
       to,
-      subject: "Welcome to Muhtaraf!",
+      subject: "Welcome to OverQualified!",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Welcome, ${esc(firstName)}!</h2>
@@ -121,7 +121,7 @@ class EmailService {
     const adminUrl = `${clientOrigin()}/admin`;
     await this.send({
       to: process.env.ADMIN_EMAIL!,
-      subject: `[Muhtaraf] New Payment — Ref: ${details.referenceNumber}`,
+      subject: `[OverQualified] New Payment — Ref: ${details.referenceNumber}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:auto">
           <h2>New InstaPay Payment Request</h2>
@@ -155,7 +155,7 @@ class EmailService {
         : `<strong>${purchase.credits} credits</strong> have been added to your balance`;
     await this.send({
       to,
-      subject: "Muhtaraf — Payment Approved!",
+      subject: "OverQualified — Payment Approved!",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Congratulations, ${esc(firstName)}!</h2>
@@ -173,7 +173,7 @@ class EmailService {
   ): Promise<void> {
     await this.send({
       to,
-      subject: "Muhtaraf — Payment Could Not Be Verified",
+      subject: "OverQualified — Payment Could Not Be Verified",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Hi ${esc(firstName)},</h2>
@@ -192,7 +192,7 @@ class EmailService {
   ): Promise<void> {
     await this.send({
       to,
-      subject: `Muhtaraf Pro expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
+      subject: `OverQualified Pro expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2>Hi ${esc(firstName)},</h2>
@@ -221,13 +221,13 @@ class EmailService {
       .join("");
     await this.send({
       to,
-      subject: `Muhtaraf — ${jobs.length} new job match${jobs.length !== 1 ? "es" : ""} for you`,
+      subject: `OverQualified — ${jobs.length} new job match${jobs.length !== 1 ? "es" : ""} for you`,
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:auto">
           <h2>Hi ${esc(firstName)},</h2>
           <p>Here are your top new matches. The <strong>Apply early</strong> ones were just posted — get in before the competition.</p>
           ${rows}
-          <p style="color:#888;font-size:12px;margin-top:16px">Open Muhtaraf to see all matches and track your applications.</p>
+          <p style="color:#888;font-size:12px;margin-top:16px">Open OverQualified to see all matches and track your applications.</p>
         </div>
       `,
     });

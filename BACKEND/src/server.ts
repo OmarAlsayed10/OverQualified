@@ -38,6 +38,16 @@ const port = process.env.PORT;
 const trustProxyHops = parseTrustProxyHops();
 app.set("trust proxy", trustProxyHops);
 
+let clientIpDiagnosticPending = true;
+app.use((req, _res, next) => {
+  if (clientIpDiagnosticPending) {
+    clientIpDiagnosticPending = false;
+    const forwardedFor = req.headers["x-forwarded-for"] || "none";
+    console.log(`[network] clientIp=${req.ip} forwardedFor=${forwardedFor} trustProxyHops=${trustProxyHops}`);
+  }
+  next();
+});
+
 app.use(helmet());
 app.use(
   cors({

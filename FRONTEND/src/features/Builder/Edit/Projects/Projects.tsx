@@ -26,6 +26,7 @@ import type { Control, UseFormSetValue } from 'react-hook-form';
 import { COLORS, RADIUS } from '../../../../theme/tokens';
 import { useFieldUndo } from '../../../../hooks/useFieldUndo';
 import type { useTranslation as useTranslationType } from 'react-i18next';
+import { normalizePastedBulletText } from '../../../../templates/bulletLines';
 
 const projectsSchema = z.object({
   projects: z.array(
@@ -75,6 +76,20 @@ const ProjectDescriptionField = ({
             descUndo.onTypingChange(f.value || '');
             f.onChange(e);
           }}
+          onPaste={(event) => {
+            const pasted = event.clipboardData.getData('text');
+            const normalized = normalizePastedBulletText(pasted);
+            if (normalized === pasted) return;
+            event.preventDefault();
+            const input = event.target as HTMLTextAreaElement;
+            const current = f.value || '';
+            descUndo.pushChange(current);
+            setValue(
+              `projects.${index}.description`,
+              `${current.slice(0, input.selectionStart)}${normalized}${current.slice(input.selectionEnd)}`,
+              { shouldDirty: true },
+            );
+          }}
           onBlur={() => {
             descUndo.commitTyping();
             f.onBlur();
@@ -89,7 +104,7 @@ const ProjectDescriptionField = ({
                 context={{ projectName, technologies }}
                 onResult={(text) => {
                   descUndo.pushChange(f.value || '');
-                  setValue(`projects.${index}.description`, text, { shouldDirty: true });
+                  setValue(`projects.${index}.description`, normalizePastedBulletText(text), { shouldDirty: true });
                 }}
               />
             </Stack>

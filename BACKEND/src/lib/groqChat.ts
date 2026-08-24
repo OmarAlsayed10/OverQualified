@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { recordUsage, recordRateLimit } from "../services/aiStatusService";
 import { getUserId } from "./creditContext";
 import { spendCredits, creditCost } from "../services/quotaService";
+import { AI_MODELS } from "../config/aiModels";
 
 const charge = (model: string, usage: OpenAI.Completions.CompletionUsage | undefined) => {
   const userId = getUserId();
@@ -19,13 +20,7 @@ const clients = [
   .map((key, i) => (key ? { client: makeClient(key), label: `key${i + 1}` } : null))
   .filter((c): c is { client: OpenAI; label: string } => c !== null);
 
-// Single source of truth for model ids. `fast` is the cheap 8B model (also the
-// rate-limit fallback); `versatile` is the higher-quality 70B model.
-export const MODELS = {
-  fast: "llama-3.1-8b-instant",
-  versatile: "llama-3.3-70b-versatile",
-  compoundMini: "groq/compound-mini",
-} as const;
+export const MODELS = AI_MODELS;
 
 const FALLBACK_MODEL = MODELS.fast;
 

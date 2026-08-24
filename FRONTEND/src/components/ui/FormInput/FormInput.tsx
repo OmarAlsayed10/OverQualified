@@ -12,6 +12,7 @@ const FormInput = ({
   onChange,
   onBlur,
   onKeyDown,
+  onPaste,
   error,
   helperText,
   placeholder,
@@ -47,6 +48,7 @@ const FormInput = ({
           onChange={onChange}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
+          onPaste={onPaste}
           error={error}
           helperText={helperText}
           placeholder={placeholder}

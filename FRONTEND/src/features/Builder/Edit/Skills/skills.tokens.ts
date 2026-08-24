@@ -13,9 +13,23 @@ const skills = {
     mb: 2,
     textAlign: 'start',
   },
+  categoryCard: {
+    border: `1px solid ${COLORS.borderLight}`,
+    borderRadius: RADIUS.md,
+    p: 2,
+    mb: 2,
+    backgroundColor: COLORS.bgRaised,
+  },
+  categoryHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    mb: 1.5,
+  },
   addButton: {
-    border: '1px dashed rgba(26,26,24,0.3)',
-    borderColor: 'rgba(26,26,24,0.3)',
+    border: `1px dashed ${COLORS.borderMedium}`,
+    borderColor: COLORS.borderMedium,
     color: COLORS.textPrimary,
     '&:hover': {
       borderColor: COLORS.primary,
@@ -23,9 +37,9 @@ const skills = {
       backgroundColor: COLORS.primaryAlpha12,
     },
     fontSize: '0.8rem',
-    padding: '4px 12px',
+    padding: '6px 14px',
     boxShadow: 'none',
-    mt: -1,
+    mt: 1,
     height: 'fit-content',
   },
   skillsAreaEmpty: {

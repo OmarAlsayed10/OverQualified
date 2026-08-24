@@ -56,7 +56,8 @@ export const applyPageBreaks = (
     const origin = content.getBoundingClientRect().top;
     const top = (unit[0].getBoundingClientRect().top - origin) / screenPerPageUnit;
     const bottom = (unit[unit.length - 1].getBoundingClientRect().bottom - origin) / screenPerPageUnit;
-    const push = pageBreakPush(top, bottom, pageHeight, padding);
+    const unitPadding = unit[0].hasAttribute('data-cv-compact-break') ? 0 : padding;
+    const push = pageBreakPush(top, bottom, pageHeight, unitPadding);
     if (push > 0) unit[0].style.marginTop = `${push / zoom}px`;
   });
 };

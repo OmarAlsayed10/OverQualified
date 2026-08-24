@@ -138,8 +138,9 @@ export const generateSmartSkillsController = async (req: Request, res: Response)
     return;
   }
   try {
-    const skills = await generateSmartSkills(formData);
-    res.status(200).json({ skills });
+    const skillCategories = await generateSmartSkills(formData);
+    const skills = skillCategories.flatMap((category) => category.skills);
+    res.status(200).json({ skillCategories, skills });
   } catch (error) {
     sendAiError(res, error, "Generate smart skills error", "Failed to generate skills");
   }

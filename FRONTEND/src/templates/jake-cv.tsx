@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
+import SkillCategoryList from "./SkillCategoryList";
 import { certificationDetail } from "./certificationText";
 import { bulletLines } from "./bulletLines";
 
@@ -52,6 +53,7 @@ const JakeCV = ({
   portfolio,
   summary,
   skills,
+  skillCategories,
   languages,
   certifications,
   experience,
@@ -66,6 +68,7 @@ const JakeCV = ({
   // The title is what the CV is applying as, so it gets its own line under the name. Tacked onto
   // the end of the contact string it read as one more contact field, in the same small grey type.
   const contact = [phone, email, linkedin, github, portfolio, location].filter(Boolean).join("  |  ");
+  const hasSkills = Boolean((skillCategories && skillCategories.length > 0) || skills);
 
   const fullContent = (
     <Box sx={{ p: { xs: 4, sm: 5 }, boxSizing: "border-box", display: 'flex', flexDirection: 'column' }}>
@@ -158,10 +161,15 @@ const JakeCV = ({
       )}
 
       {/* Skills */}
-      {skills && (
+      {hasSkills && (
         <Box data-cv-section="skills" sx={{ order: sectionOrder.indexOf('skills') }}>
           <Typography draggable data-cv-drag-handle sx={HEADING}>{t('Skills')}</Typography>
-          <Typography sx={{ fontSize: "0.9rem", color: "#333", lineHeight: 1.5 }}>{skills}</Typography>
+          <SkillCategoryList
+            categories={skillCategories}
+            skills={skills}
+            categorySx={{ fontSize: "0.9rem", color: "#333", lineHeight: 1.5 }}
+            labelSx={{ fontWeight: 700, color: "#1a1a18" }}
+          />
         </Box>
       )}
 

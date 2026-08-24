@@ -5,7 +5,7 @@ set -euo pipefail
 umask 077
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 backup_directory="${BACKUP_DIR:-${script_directory}/../backups}"
-backup_file="${backup_directory}/muhtaraf-$(date -u +%Y%m%dT%H%M%SZ).dump"
+backup_file="${backup_directory}/overqualified-$(date -u +%Y%m%dT%H%M%SZ).dump"
 temporary_file="${backup_file}.tmp"
 
 mkdir -p "$backup_directory"

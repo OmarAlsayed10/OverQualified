@@ -10,9 +10,26 @@ const LEADING_MARKER = /^(?:[-–—•▪●‣⁃]|\*(?!\*))\s*/;
 // "2020 - 2024" and phrases like "Client - Acme" in one piece. Bullet glyphs always split.
 const INLINE_MARKER = /(?<=[.;:!?])\s+(?=[-–—•*▪●‣⁃]\s+\S)|\s+(?=[•▪●‣⁃]\s*\S)/g;
 
+const ACTION_VERB = /^(?:Architected|Automated|Built|Collaborated|Created|Delivered|Deployed|Designed|Developed|Engineered|Established|Implemented|Improved|Increased|Integrated|Launched|Led|Maintained|Managed|Migrated|Optimized|Reduced|Refactored|Resolved|Streamlined|Supported|Tested)\b/i;
+
+const actionSentenceLines = (line: string): string[] =>
+  line.split(/(?<=[.!?;])\s+/).reduce<string[]>((parts, sentence) => {
+    const trimmed = sentence.trim();
+    if (parts.length > 0 && ACTION_VERB.test(trimmed)) parts.push(trimmed);
+    else if (parts.length === 0) parts.push(trimmed);
+    else parts[parts.length - 1] = `${parts[parts.length - 1]} ${trimmed}`;
+    return parts;
+  }, []);
+
 export const bulletLines = (text: string): string[] =>
   (text || '')
     .split('\n')
     .flatMap((line) => line.split(INLINE_MARKER))
     .map((line) => line.replace(LEADING_MARKER, '').trim())
+    .flatMap(actionSentenceLines)
     .filter(Boolean);
+
+export const normalizePastedBulletText = (text: string): string => {
+  const lines = bulletLines(text);
+  return lines.length > 1 ? lines.join('\n') : text;
+};

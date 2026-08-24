@@ -46,8 +46,13 @@ export interface CertificationItem {
   description: string;
 }
 
-export interface SkillsData {
+export interface SkillCategory {
+  name: string;
   skills: string[];
+}
+
+export interface SkillsData {
+  skillCategories: SkillCategory[];
   languages: string;
   certifications: CertificationItem[];
 }
@@ -120,7 +125,7 @@ export const createEmptyBuilderFormData = (): BuilderFormData => ({
   experience: [],
   education: [],
   projects: [],
-  skills: { skills: [], languages: "", certifications: [] },
+  skills: { skillCategories: [], languages: "", certifications: [] },
   customSections: [],
 });
 
@@ -166,12 +171,41 @@ const normalizeCertifications = (input: unknown): CertificationItem[] => {
     .filter((entry): entry is CertificationItem => entry !== null);
 };
 
-const normalizeSkills = (input: unknown): SkillsData => {
-  if (!isRecord(input)) return { skills: [], languages: "", certifications: [] };
+export const normalizeSkillCategories = (input: unknown): SkillCategory[] => {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item) => {
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        return trimmed ? { name: "", skills: [trimmed] } : null;
+      }
+      if (!isRecord(item)) return null;
+      const name = text(item.name).trim();
+      const skills = Array.isArray(item.skills)
+        ? item.skills.map(text).map((s) => s.trim()).filter(Boolean)
+        : [];
+      if (!name && skills.length === 0) return null;
+      return { name, skills };
+    })
+    .filter((cat): cat is SkillCategory => cat !== null);
+};
+
+export const normalizeSkills = (input: unknown): SkillsData => {
+  if (!isRecord(input)) return { skillCategories: [], languages: "", certifications: [] };
+
+  let categories: SkillCategory[] = [];
+  if (Array.isArray(input.skillCategories)) {
+    categories = normalizeSkillCategories(input.skillCategories);
+  }
+  if (categories.length === 0 && Array.isArray(input.skills)) {
+    const flat = input.skills.map(text).map((skill) => skill.trim()).filter(Boolean);
+    if (flat.length > 0) {
+      categories = [{ name: "Other Skills", skills: flat }];
+    }
+  }
+
   return {
-    skills: Array.isArray(input.skills)
-      ? input.skills.filter((skill): skill is string => typeof skill === "string")
-      : [],
+    skillCategories: categories,
     languages: text(input.languages),
     certifications: normalizeCertifications(input.certifications),
   };
@@ -354,6 +388,8 @@ export const cvBuilderSlice = createSlice({
         } else {
           form[section] = [data];
         }
+      } else if (section === "skills") {
+        form[section] = normalizeSkills({ ...form[section], ...data });
       } else {
         form[section] = { ...form[section], ...data };
       }

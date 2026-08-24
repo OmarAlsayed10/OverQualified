@@ -30,7 +30,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 }
 
 export const adjustCVController = async (req: Request, res: Response) => {
-  const { cvText, currentScore, negativeFeedback, sectionsToImprove, targetRole, level, applyJakeTemplate } = req.body;
+  const { cvText, negativeFeedback, sectionsToImprove, targetRole, level, applyJakeTemplate } = req.body;
 
   if (!cvText || typeof cvText !== "string" || cvText.trim().length === 0) {
     res.status(400).json({ message: "cvText is required" });
@@ -41,7 +41,6 @@ export const adjustCVController = async (req: Request, res: Response) => {
     return;
   }
 
-  const safeCurrentScore = typeof currentScore === "number" ? currentScore : 0;
   const role = typeof targetRole === "string" ? targetRole : "";
   const lvl = typeof level === "string" ? level : "";
 
@@ -52,7 +51,6 @@ export const adjustCVController = async (req: Request, res: Response) => {
     const { adjustedCV, changes, formData } = await withRetry(() =>
       adjustCV(
         cvText,
-        safeCurrentScore,
         Array.isArray(negativeFeedback) ? negativeFeedback : [],
         Array.isArray(sectionsToImprove) ? sectionsToImprove : [],
         breakdown,

@@ -91,12 +91,30 @@ export const cvToText = (cv: RawCv): string => {
   const skills = cv.skills ?? {};
   const languages = Array.isArray(skills.languages) ? skills.languages.join(", ") : text(skills.languages);
 
+  const formattedSkillCategories = Array.isArray(skills.skillCategories)
+    ? skills.skillCategories
+        .map((cat: any) => {
+          const catName = text(cat?.name).trim();
+          const catSkills = Array.isArray(cat?.skills)
+            ? cat.skills.map(text).filter(Boolean)
+            : typeof cat?.skills === "string"
+              ? [cat.skills.trim()]
+              : [];
+          if (catSkills.length === 0) return "";
+          return catName ? `${catName}: ${catSkills.join(", ")}` : catSkills.join(", ");
+        })
+        .filter(Boolean)
+        .join("\n")
+    : "";
+
+  const skillsContent = formattedSkillCategories || (Array.isArray(skills.skills) ? skills.skills.join(", ") : text(skills.skills));
+
   const sections: Record<string, string> = {
     personal: section("PROFESSIONAL SUMMARY", text(personal.ProfessionalSummary)),
     experience: section("WORK EXPERIENCE", experience.join("\n\n")),
     projects: section("PROJECTS", projects.join("\n\n")),
     education: section("EDUCATION", education.join("\n\n")),
-    skills: section("SKILLS", (skills.skills ?? []).join(", ")),
+    skills: section("SKILLS", skillsContent),
     languages: section("LANGUAGES", languages),
     certifications: section("CERTIFICATIONS", certificationsText(skills.certifications)),
   };

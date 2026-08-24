@@ -22,7 +22,7 @@ function Navbar() {
   const currentLang = i18n.language;
   const isRTL = currentLang === 'ar';
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'), { noSsr: true });
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
@@ -47,17 +47,17 @@ function Navbar() {
   const pages = [
     { label: t('Home'), href: '/' },
     { label: t('Job Radar'), href: '/job-radar' },
-    { label: t('Blogs'), href: '/Blogs' },
+    { label: t('Blogs'), href: '/blogs' },
     { label: t('Pricing'), href: '/pricing' },
   ];
 
   return (
     <AppBar position="sticky" elevation={0} sx={{ ...navbar.appBar, direction: isRTL ? 'rtl' : 'ltr' }}>
       <Container maxWidth="xl" disableGutters>
-        <Toolbar disableGutters>
+        <Toolbar disableGutters sx={navbar.toolbar}>
           <Typography variant="h6" noWrap onClick={() => navigate('/')} sx={navbar.logoDesktop}>
             <DescriptionIcon sx={navbar.brandIcon} />
-            Muhtaraf
+            OverQualified
           </Typography>
 
           {!isDesktop && (
@@ -68,7 +68,7 @@ function Navbar() {
                 </IconButton>
                 <Typography variant="h5" noWrap onClick={() => navigate('/')} sx={navbar.logoMobile}>
                   <DescriptionIcon sx={navbar.brandIconSmall} />
-                  Muhtaraf
+                  OverQualified
                 </Typography>
               </Box>
 

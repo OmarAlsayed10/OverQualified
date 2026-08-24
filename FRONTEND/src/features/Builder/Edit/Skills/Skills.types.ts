@@ -1,6 +1,8 @@
+import type { SkillCategory } from '../../../../redux/store/slices/cvBuilderSlice';
+
 export interface SkillsProps {}
 
 export interface SkillsFormData {
-  skills: string[];
+  skillCategories: SkillCategory[];
   languages?: string;
 }

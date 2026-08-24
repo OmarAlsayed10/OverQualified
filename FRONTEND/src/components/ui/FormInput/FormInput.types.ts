@@ -1,4 +1,4 @@
-import { ChangeEvent, KeyboardEventHandler, ElementType, ReactNode } from 'react';
+import { ChangeEvent, ClipboardEventHandler, KeyboardEventHandler, ElementType, ReactNode } from 'react';
 
 export interface FieldFormattingOptions {
   onValueChange: (formattedText: string) => void;
@@ -12,6 +12,7 @@ export interface FormInputProps {
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onBlur?: () => void;
   onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  onPaste?: ClipboardEventHandler<HTMLDivElement>;
   error?: boolean;
   helperText?: string;
   placeholder?: string;

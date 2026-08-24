@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma";
+import { AI_MODELS } from "../config/aiModels";
 
 // Durable per-day, per-model Groq usage tracker for the admin dashboard.
 // Stored in the DB so counts survive server restarts/deploys. Groq's per-model
@@ -49,17 +50,14 @@ export async function getAiStatus() {
     day,
     dailyLimit: DAILY_TOKEN_LIMIT,
     models,
-    limits: {
-      "llama-3.3-70b-versatile-key1": DAILY_TOKEN_LIMIT,
-      "llama-3.3-70b-versatile-key2": DAILY_TOKEN_LIMIT,
-      "llama-3.3-70b-versatile-key3": DAILY_TOKEN_LIMIT,
-      "llama-3.1-8b-instant-key1": DAILY_TOKEN_LIMIT,
-      "llama-3.1-8b-instant-key2": DAILY_TOKEN_LIMIT,
-      "llama-3.1-8b-instant-key3": DAILY_TOKEN_LIMIT,
-    },
+    limits: Object.fromEntries(
+      Object.values(AI_MODELS)
+        .filter((model) => model !== AI_MODELS.compoundMini)
+        .flatMap((model) => Array.from({ length: keyCount }, (_, index) => [`${model}-key${index + 1}`, DAILY_TOKEN_LIMIT])),
+    ),
     keysCount: {
-      "llama-3.3-70b-versatile": keyCount,
-      "llama-3.1-8b-instant": keyCount,
+      [AI_MODELS.versatile]: keyCount,
+      [AI_MODELS.fast]: keyCount,
     }
   };
 }

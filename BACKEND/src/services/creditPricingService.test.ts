@@ -1,3 +1,4 @@
+import { AI_MODELS } from "../config/aiModels";
 import {
   PricingConfigurationError,
   creditQuote,
@@ -58,17 +59,17 @@ describe("creditPricingService", () => {
 
   it("uses exact model input/output prices and compound tool cost", () => {
     expect(
-      creditsForUsage("llama-3.1-8b-instant", {
+      creditsForUsage(AI_MODELS.fast, {
         prompt_tokens: 1_000_000,
         completion_tokens: 0,
       }),
-    ).toBe(500);
+    ).toBe(750);
     expect(
-      creditsForUsage("llama-3.3-70b-versatile", {
+      creditsForUsage(AI_MODELS.versatile, {
         prompt_tokens: 0,
         completion_tokens: 1_000_000,
       }),
-    ).toBe(7900);
+    ).toBe(6000);
     expect(
       creditsForUsage("groq/compound-mini", {
         prompt_tokens: 0,

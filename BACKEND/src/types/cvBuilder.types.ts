@@ -40,9 +40,10 @@ export interface CVParams {
     githubUrl?: string;
     description?: string;
   }>;
-  skills:{
-    skills: string[];
+  skills: {
+    skillCategories?: Array<{ name: string; skills: string[] }>;
+    skills?: string[];
     languages?: string;
-    certifications?: Array<{ name: string; issuer: string; date: string; url: string }>;
+    certifications?: Array<{ name: string; issuer: string; date: string; url: string; description?: string }>;
   };
 }

@@ -1,5 +1,10 @@
-import { groqChat } from "../lib/groqChat";
+import { groqChat, MODELS } from "../lib/groqChat";
 import { ProjectOwnership, coerceProjectOwnership } from "./projectOwnership";
+
+export interface SkillCategory {
+  name: string;
+  skills: string[];
+}
 
 export interface BuilderFormData {
   personalInfo: {
@@ -41,7 +46,12 @@ export interface BuilderFormData {
     description: string;
     ownership: ProjectOwnership;
   }[];
-  skills: { skills: string[]; languages: string; certifications: CertificationItem[] };
+  skills: {
+    skillCategories?: SkillCategory[];
+    skills?: string[];
+    languages: string;
+    certifications: CertificationItem[];
+  };
 }
 
 export interface CertificationItem {
@@ -57,7 +67,46 @@ const EMPTY: BuilderFormData = {
   experience: [],
   education: [],
   projects: [],
-  skills: { skills: [], languages: "", certifications: [] },
+  skills: { skillCategories: [], languages: "", certifications: [] },
+};
+
+export const coerceSkillCategories = (input: any): SkillCategory[] => {
+  const s = (v: any) => (typeof v === "string" ? v.trim() : "");
+  const arr = (v: any) => (Array.isArray(v) ? v : []);
+
+  if (Array.isArray(input?.skillCategories)) {
+    const categories = arr(input.skillCategories)
+      .map((cat: any) => ({
+        name: s(cat?.name),
+        skills: arr(cat?.skills).map(s).filter(Boolean),
+      }))
+      .filter((cat) => cat.name || cat.skills.length > 0);
+    if (categories.length > 0) return categories;
+  }
+
+  if (Array.isArray(input?.skills)) {
+    const flat = arr(input.skills).map(s).filter(Boolean);
+    if (flat.length > 0) {
+      return [{ name: "Other Skills", skills: flat }];
+    }
+  }
+
+  if (Array.isArray(input)) {
+    return arr(input)
+      .map((cat: any) => {
+        if (typeof cat === "string") {
+          const trimmed = cat.trim();
+          return trimmed ? { name: "", skills: [trimmed] } : null;
+        }
+        return {
+          name: s(cat?.name),
+          skills: arr(cat?.skills).map(s).filter(Boolean),
+        };
+      })
+      .filter((cat): cat is SkillCategory => cat !== null && (Boolean(cat.name) || cat.skills.length > 0));
+  }
+
+  return [];
 };
 
 // Older CVs stored certifications as one comma-separated string.
@@ -157,6 +206,7 @@ export function coerceFormData(p: any): BuilderFormData {
       ownership: coerceProjectOwnership(pr?.ownership),
     })),
     skills: {
+      skillCategories: coerceSkillCategories(p?.skills),
       skills: arr(p?.skills?.skills).map(s).filter(Boolean),
       languages: s(p?.skills?.languages),
       certifications: coerceCertifications(p?.skills?.certifications),
@@ -173,7 +223,7 @@ Return ONLY this exact JSON shape:
   "experience": [ { "jobTitle": "", "company": "", "location": "", "startDate": "", "endDate": "", "description": "" } ],
   "education": [ { "institution": "", "degree": "", "location": "", "startYear": "", "endYear": "", "description": "" } ],
   "projects": [ { "name": "", "technologies": "", "demoUrl": "", "githubUrl": "", "description": "" } ],
-  "skills": { "skills": [], "languages": "", "certifications": [ { "name": "", "issuer": "", "date": "", "url": "" } ] }
+  "skills": { "skillCategories": [ { "name": "", "skills": [] } ], "languages": "", "certifications": [ { "name": "", "issuer": "", "date": "", "url": "" } ] }
 }
 
 CRITICAL RULES:
@@ -182,7 +232,7 @@ CRITICAL RULES:
    - "Work History", "Experience", "Professional Experience", "Employment History", "Roles", "Employment", "Career History" -> Map to "experience".
    - "Education", "Academic Background", "Studies", "University", "Degree" -> Map to "education".
    - "About Me", "Profile", "Summary", "Professional Profile", "Executive Summary", "Bio" -> Map to "ProfessionalSummary" under "personalInfo".
-   - "Skills", "Core Competencies", "Technologies", "Expertise", "Technical Skills" -> Map to "skills" under the "skills" object.
+   - "Skills", "Core Competencies", "Technologies", "Expertise", "Technical Skills" -> Group into "skillCategories" under the "skills" object with relevant category names (e.g. "Languages", "Frameworks & Libraries", "Databases", "Tools & Platforms", "Soft Skills") and skills string arrays.
    - "Projects", "Personal Projects", "Academic Projects", "Open Source" -> Map to "projects".
    - "Languages" -> Map to "languages" under the "skills" object.
    - "Certifications", "Courses" -> Map to "certifications" under the "skills" object. One array entry per certification: "name" is the credential, "issuer" the awarding body, "date" when it was earned, "url" the verification link. Leave any part "" if the CV does not state it. Return [] if there are none.
@@ -218,7 +268,7 @@ ${cvText}
 ---`;
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     messages: [
       { role: "system", content: "You extract CVs into structured JSON. Output valid JSON only. Never fabricate." },
       { role: "user", content: userPrompt },

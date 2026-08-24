@@ -135,11 +135,17 @@ const OnboardingWizard = () => {
     setSaving(true);
     setError('');
     try {
+      const extractedProfileSkills = Array.isArray(cvData?.skills?.skillCategories)
+        ? cvData.skills.skillCategories.flatMap((cat: any) => cat.skills || []).filter(Boolean)
+        : Array.isArray((cvData?.skills as any)?.skills)
+          ? (cvData?.skills as any).skills
+          : [];
+
       await axios.patch(
         USER_ENDPOINTS.updateProfile,
         {
           ...form,
-          ...(cvData?.skills?.skills?.length ? { skills: cvData.skills.skills } : {}),
+          ...(extractedProfileSkills.length ? { skills: extractedProfileSkills } : {}),
           onboarded: true,
         },
         { withCredentials: true },

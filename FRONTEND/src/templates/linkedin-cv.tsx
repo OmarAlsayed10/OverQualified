@@ -2,6 +2,7 @@ import { Box, Typography } from "@mui/material";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
+import SkillCategoryList from "./SkillCategoryList";
 import { certificationDetail } from "./certificationText";
 
 const PAGE_HEIGHT = 1123;
@@ -20,6 +21,7 @@ const LinkedInCV = ({
   experience = [],
   education = [],
   skills,
+  skillCategories,
   languages = [],
   certifications = [],
   sectionOrder = ['personal', 'projects', 'experience', 'education', 'skills', 'languages', 'certifications'],
@@ -27,6 +29,7 @@ const LinkedInCV = ({
   printMode = false,
   activePage = 1,
 }: any) => {
+  const hasSkills = Boolean((skillCategories && skillCategories.length > 0) || skills);
   const fullContent = (
       <Box sx={{
         width: "100%",
@@ -193,23 +196,32 @@ const LinkedInCV = ({
           </Box>
         </Box>
 
-        <Box data-cv-section="skills" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('skills') }}>
-          <Typography draggable data-cv-drag-handle variant="h3" sx={{
-            fontSize: "20px",
-            marginBottom: "10px",
-            color: "#004080",
-            borderBottom: "1px solid #ccc",
-            paddingBottom: "4px",
-          }}>Skills</Typography>
-          <Box sx={{
-            marginTop: "10px",
-            fontSize: "14px",
-            backgroundColor: "#eaf4ff",
-            padding: "10px",
-            borderRadius: "6px",
-            lineHeight: 1.8,
-          }}>{skills}</Box>
-        </Box>
+        {hasSkills && (
+          <Box data-cv-section="skills" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('skills') }}>
+            <Typography draggable data-cv-drag-handle variant="h3" sx={{
+              fontSize: "20px",
+              marginBottom: "10px",
+              color: "#004080",
+              borderBottom: "1px solid #ccc",
+              paddingBottom: "4px",
+            }}>Skills</Typography>
+            <Box sx={{
+              marginTop: "10px",
+              fontSize: "14px",
+              backgroundColor: "#eaf4ff",
+              padding: "10px",
+              borderRadius: "6px",
+              lineHeight: 1.8,
+            }}>
+              <SkillCategoryList
+                categories={skillCategories}
+                skills={skills}
+                categorySx={{ fontSize: "14px", color: "#1a1a18", lineHeight: 1.8 }}
+                labelSx={{ fontWeight: 600, color: "#004080" }}
+              />
+            </Box>
+          </Box>
+        )}
 
         <Box data-cv-section="languages" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('languages') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{

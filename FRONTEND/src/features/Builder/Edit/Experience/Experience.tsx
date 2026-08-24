@@ -29,6 +29,7 @@ import type { Control, UseFormSetValue } from 'react-hook-form';
 import type { ExperienceFormData } from './Experience.types';
 import { useFieldUndo } from '../../../../hooks/useFieldUndo';
 import { useTranslation as useTranslationType } from 'react-i18next';
+import { normalizePastedBulletText } from '../../../../templates/bulletLines';
 
 interface ExperienceDescriptionFieldProps {
   control: Control<ExperienceFormData>;
@@ -64,6 +65,20 @@ const ExperienceDescriptionField = ({
             descUndo.onTypingChange(f.value || '');
             f.onChange(e);
           }}
+          onPaste={(event) => {
+            const pasted = event.clipboardData.getData('text');
+            const normalized = normalizePastedBulletText(pasted);
+            if (normalized === pasted) return;
+            event.preventDefault();
+            const input = event.target as HTMLTextAreaElement;
+            const current = f.value || '';
+            descUndo.pushChange(current);
+            setValue(
+              `experience.${index}.description`,
+              `${current.slice(0, input.selectionStart)}${normalized}${current.slice(input.selectionEnd)}`,
+              { shouldDirty: true },
+            );
+          }}
           onBlur={() => {
             descUndo.commitTyping();
             f.onBlur();
@@ -78,7 +93,7 @@ const ExperienceDescriptionField = ({
                 context={{ jobTitle, company }}
                 onResult={(text) => {
                   descUndo.pushChange(f.value || '');
-                  setValue(`experience.${index}.description`, text, { shouldDirty: true });
+                  setValue(`experience.${index}.description`, normalizePastedBulletText(text), { shouldDirty: true });
                 }}
               />
             </Stack>

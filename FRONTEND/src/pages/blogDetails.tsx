@@ -56,7 +56,7 @@ const BlogDetail = () => {
       <Button
         variant="text"
         startIcon={currentLang === "en" ? <ArrowBackIcon /> : <ArrowForwardIcon sx={{ px: 1 }} />}
-        onClick={() => navigate("/Blogs")}
+        onClick={() => navigate("/blogs")}
         sx={{ mb: 3 }}
       >
         {t("Back to Blog")}

@@ -29,7 +29,7 @@ export async function fetchRemotive(preference: Preference): Promise<RawJob[]> {
 }
 
 export async function fetchRemoteOK(): Promise<RawJob[]> {
-  const { data } = await axios.get("https://remoteok.com/api", { timeout: 10000, headers: { "User-Agent": "Muhtaraf Job Radar" } });
+  const { data } = await axios.get("https://remoteok.com/api", { timeout: 10000, headers: { "User-Agent": "OverQualified Job Radar" } });
   const sourceJobs = Array.isArray(data) ? data.filter((sourceJob: any) => sourceJob.position) : [];
   return sourceJobs.map((sourceJob: any) => job("remoteok", {
     externalId: String(sourceJob.id), title: sourceJob.position || "", company: sourceJob.company || "Unknown", location: sourceJob.location || null, url: sourceJob.url || "", postedAt: sourceJob.date ? new Date(sourceJob.date) : null, description: normalizeJobDescription(sourceJob.description || "").plainText,

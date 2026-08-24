@@ -92,14 +92,16 @@ const AiStatusTab = () => {
     );
   }
 
-  const keys70b = status?.keysCount?.["llama-3.3-70b-versatile"] ?? 1;
-  const keys8b = status?.keysCount?.["llama-3.1-8b-instant"] ?? 1;
+  const qualityModel = "openai/gpt-oss-120b";
+  const fastModel = "openai/gpt-oss-20b";
+  const qualityKeys = status?.keysCount?.[qualityModel] ?? 1;
+  const fastKeys = status?.keysCount?.[fastModel] ?? 1;
   const keyNames = (base: string, n: number) =>
     Array.from({ length: n }, (_, i) => `${base}-key${i + 1}`);
 
   const knownModels = [
-    ...keyNames("llama-3.3-70b-versatile", keys70b),
-    ...keyNames("llama-3.1-8b-instant", keys8b),
+    ...keyNames(qualityModel, qualityKeys),
+    ...keyNames(fastModel, fastKeys),
   ];
 
   const dailyLimit = status?.dailyLimit ?? 100000;

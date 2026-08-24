@@ -3,7 +3,8 @@ import {
   parseAiResponse,
   untrustedCandidatePayload,
 } from "../../lib/aiResponseValidation";
-import { aiResultSchema } from "../aiService";
+import { isJsonSchemaFailure } from "../aiService";
+import { aiResultSchema } from "../cvAnalysisSchema";
 import { qualityScoresSchema } from "../cvScoring/qualityScoresSchema";
 
 const validAnalysis = {
@@ -12,6 +13,7 @@ const validAnalysis = {
   negativeFeedback: [],
   sectionsToImprove: [
     {
+      sectionKey: "summary",
       section: "Summary",
       suggestion: "Name the target role and lead with the latency result.",
       evidence: {
@@ -58,7 +60,7 @@ describe("AI response contracts", () => {
     const withoutEvidence = {
       ...validAnalysis,
       sectionsToImprove: [
-        { section: "Summary", suggestion: "Add a target role." },
+        { sectionKey: "summary", section: "Summary", suggestion: "Add a target role." },
       ],
     };
 
@@ -83,6 +85,12 @@ describe("AI response contracts", () => {
     );
 
     expect(parsed).toEqual(validQualityScores);
+  });
+
+  test("recognizes Groq structured-output validation failures for quality retry", () => {
+    expect(isJsonSchemaFailure({ status: 400, code: "json_validate_failed" })).toBe(true);
+    expect(isJsonSchemaFailure({ status: 400, code: "invalid_request_error" })).toBe(false);
+    expect(isJsonSchemaFailure(null)).toBe(false);
   });
 
   test("serializes prompt-like CV content as a JSON string value", () => {

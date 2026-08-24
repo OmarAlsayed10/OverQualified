@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
+import SkillCategoryList from "./SkillCategoryList";
 import { certificationDetail } from "./certificationText";
 
 const PAGE_HEIGHT = 1123;
@@ -19,6 +20,7 @@ const ModernCV = ({
   portfolio,
   summary,
   skills,
+  skillCategories,
   languages = [],
   certifications = [],
   experience = [],
@@ -29,6 +31,7 @@ const ModernCV = ({
   activePage = 1,
 }: any) => {
   const { t } = useTranslation();
+  const hasSkills = Boolean((skillCategories && skillCategories.length > 0) || skills);
 
   const fullContent = (
     <Box sx={{
@@ -55,10 +58,17 @@ const ModernCV = ({
         {github && <Typography><Box component="strong">GitHub:</Box> {github}</Typography>}
         {portfolio && <Typography><Box component="strong">Portfolio:</Box> {portfolio}</Typography>}
 
-        <Box data-cv-section="skills" sx={{ order: sectionOrder.indexOf('skills') }}>
-          <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Skills')}</Typography>
-          <Typography>{skills}</Typography>
-        </Box>
+        {hasSkills && (
+          <Box data-cv-section="skills" sx={{ order: sectionOrder.indexOf('skills') }}>
+            <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Skills')}</Typography>
+            <SkillCategoryList
+              categories={skillCategories}
+              skills={skills}
+              categorySx={{ fontSize: "14px", color: "#ffffff", lineHeight: 1.5, mb: 0.5 }}
+              labelSx={{ fontWeight: 600, color: "#ffffff" }}
+            />
+          </Box>
+        )}
         <Box data-cv-section="languages" sx={{ order: sectionOrder.indexOf('languages') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Languages')}</Typography>
           <Typography>{languages.map((language: any) => language.name).join(", ")}</Typography>

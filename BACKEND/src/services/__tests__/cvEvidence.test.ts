@@ -1,9 +1,12 @@
-import { unsourcedNumbers, statementUsesOnlySourceNumbers } from "../../lib/evidenceGrounding";
+import { hasSameNumberOccurrences, statementUsesOnlySourceNumbers, unsupportedNumberOccurrences, unsourcedNumbers } from "../../lib/evidenceGrounding";
 import { lastPageFromLinkHeader, parseGithubRepoUrl } from "../../lib/githubClient";
 import { parseGitlabRepoUrl, gitlabProjectId } from "../../lib/gitlabClient";
 import { classifyOwnership, describeOwnership } from "../repoAnalysisService";
 import { auditCV } from "../claimAuditService";
 import { coerceProjectOwnership } from "../projectOwnership";
+import { improveBuilderCV } from "../builderImproveService";
+import { coerceFormData } from "../cvParseService";
+import { fixableDimensionDetails, requiresCandidateEvidence } from "../cvImprovementRules";
 
 describe("evidenceGrounding", () => {
   it("accepts numbers present in the source", () => {
@@ -20,6 +23,68 @@ describe("evidenceGrounding", () => {
 
   it("ignores thousands separators when matching", () => {
     expect(statementUsesOnlySourceNumbers("Served 10,000 users", "served 10000 users")).toBe(true);
+  });
+
+  it("rejects new and duplicated numeric claims in a rewrite", () => {
+    const source = "Improved latency 40% and supported 3 teams";
+    const rewrite = "Improved latency 40% and supported 3 teams while mentoring 3 teams and shipping 12 releases";
+
+    expect(unsupportedNumberOccurrences(rewrite, source)).toEqual(["3", "12"]);
+    expect(unsupportedNumberOccurrences(source, "Improved latency 40%")).toEqual(["3"]);
+  });
+
+  it("2026-08 rejects builder rewrites that alter numeric occurrences", () => {
+    const original = "Built 6 plugins from June 2025 with 40% lower latency";
+
+    expect(hasSameNumberOccurrences(original, "Delivered 6 plugins from June 2025 with 40% lower latency")).toBe(true);
+    expect(hasSameNumberOccurrences(original, "Delivered 7 plugins from June 2025 with 40% lower latency")).toBe(false);
+    expect(hasSameNumberOccurrences(original, "Delivered 6 plugins with 40% lower latency")).toBe(false);
+  });
+});
+
+describe("cvImprovementRules", () => {
+  it("2026-08 keeps automatic fixes away from candidate-owned metrics", () => {
+    expect(requiresCandidateEvidence("Add quantified achievements to highlight impact")).toBe(true);
+    expect(requiresCandidateEvidence("Optional: include a result in your summary only when you can verify the exact figure.")).toBe(true);
+    expect(requiresCandidateEvidence("Optional: add a verified figure to 2 bullets only where you have exact evidence.")).toBe(true);
+    expect(requiresCandidateEvidence("Correct the typo in the course title")).toBe(false);
+  });
+
+  it("applies an exact certification correction without rewriting prose", async () => {
+    const formData = coerceFormData({
+      personalInfo: { ProfessionalSummary: "Frontend developer.", professionalTitle: "React,TypeScript Developer" },
+      skills: {
+        certifications: [{ name: "he Ultimate React Course", issuer: "Udemy", date: "", url: "", description: "" }],
+      },
+    });
+
+    const result = await improveBuilderCV(formData, [{
+      name: "Grammar & Spelling",
+      score: 90,
+      details: ['Correct "he Ultimate React Course" to "The Ultimate React Course".'],
+    }]);
+
+    expect(result.formData.skills.certifications[0].name).toBe("The Ultimate React Course");
+    expect(result.formData.personalInfo.ProfessionalSummary).toBe("Frontend developer.");
+    expect(result.formData.personalInfo.professionalTitle).toBe("React,TypeScript Developer");
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]).toMatchObject({
+      section: "Certification — he Ultimate React Course",
+      before: "he Ultimate React Course · Udemy",
+      after: "The Ultimate React Course · Udemy",
+    });
+  });
+
+  it("keeps only actionable score details for rewriting", () => {
+    const dimensions = fixableDimensionDetails([
+      { name: "Grammar & Spelling", score: 80, details: ["Correct the typo in the course title"] },
+      { name: "Content Quality", score: 95, details: ["Add a quantified result to the summary"] },
+      { name: "Impact & Results", score: 87, details: ["Strong — no specific issue flagged here."] },
+    ]);
+
+    expect(dimensions).toEqual([
+      { name: "Grammar & Spelling", score: 80, details: ["Correct the typo in the course title"] },
+    ]);
   });
 });
 

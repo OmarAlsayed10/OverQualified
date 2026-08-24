@@ -31,7 +31,7 @@ export const PLAN_TIERS: Record<PlanTier, TierInfo> = {
       "≈ 1 CV analysis",
       "2 resume templates",
       "Basic resume sections",
-      "Muhtaraf branding",
+      "OverQualified branding",
       "No Job Radar",
     ],
   },

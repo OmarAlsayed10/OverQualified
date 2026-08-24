@@ -10,8 +10,9 @@ import { isGroqRateLimit } from "../lib/groqChat";
 import prisma from "../lib/prisma";
 import { InvalidAiResponseError } from "../lib/aiResponseValidation";
 import { normalizeLanguage } from "../lib/aiLanguage";
-import { savedCvAnalysisArtifact } from "../services/savedCvAnalysisService";
+import { renderedCvAnalysisArtifact, savedCvAnalysisArtifact } from "../services/savedCvAnalysisService";
 import { hasPaidAccess } from "../services/entitlementService";
+import { coerceFormData } from "../services/cvParseService";
 
 export const analyzeCVController = async (req: Request, res: Response) => {
   const file = req.file as Express.Multer.File | undefined;
@@ -19,6 +20,21 @@ export const analyzeCVController = async (req: Request, res: Response) => {
     typeof req.body?.cvText === "string" ? req.body.cvText : ""
   ).slice(0, 30000);
   const cvId = typeof req.body?.cvId === "string" ? req.body.cvId.trim() : "";
+  let builderCv: Record<string, unknown> | null = null;
+  if (typeof req.body?.builderCv === "string") {
+    try {
+      const parsed = JSON.parse(req.body.builderCv);
+      if (typeof parsed !== "object" || parsed === null || typeof parsed.formData !== "object") {
+        res.status(400).json({ message: "Builder CV data is invalid" });
+        return;
+      }
+      builderCv = parsed;
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      res.status(400).json({ message: "Builder CV data is invalid" });
+      return;
+    }
+  }
 
   console.log("[cv-analyze] request received", {
     hasFile: !!file,
@@ -26,9 +42,10 @@ export const analyzeCVController = async (req: Request, res: Response) => {
     mimeType: file?.mimetype ?? null,
     inlineTextLength: cvText.length,
     hasSavedCv: Boolean(cvId),
+    hasBuilderCv: Boolean(builderCv),
   });
 
-  const sourceCount = Number(Boolean(file)) + Number(cvText.trim().length >= 30) + Number(Boolean(cvId));
+  const sourceCount = Number(Boolean(file)) + Number(cvText.trim().length >= 30) + Number(Boolean(cvId)) + Number(Boolean(builderCv));
   if (sourceCount !== 1) {
     res.status(400).json({ message: "Choose exactly one CV source" });
     return;
@@ -53,8 +70,8 @@ export const analyzeCVController = async (req: Request, res: Response) => {
     }
     const ip = req.ip || req.socket.remoteAddress || "unknown";
 
-    if (cvId && !userId) {
-      res.status(401).json({ message: "Sign in to analyze a saved CV" });
+    if ((cvId || builderCv) && !userId) {
+      res.status(401).json({ message: "Sign in to analyze this CV" });
       return;
     }
 
@@ -70,11 +87,20 @@ export const analyzeCVController = async (req: Request, res: Response) => {
       ? await extractText(file.buffer, file.mimetype)
       : savedCv
         ? await savedCvAnalysisArtifact(savedCv)
-        : { text: cvText, pageCount: estimateTextPageCount(cvText) };
+        : builderCv
+          ? await renderedCvAnalysisArtifact({
+              formData: coerceFormData(builderCv.formData),
+              sectionOrder: Array.isArray(builderCv.sectionOrder)
+                ? builderCv.sectionOrder.filter((section): section is string => typeof section === "string")
+                : undefined,
+              template: typeof builderCv.template === "string" ? builderCv.template : undefined,
+              fontScale: typeof builderCv.fontScale === "number" ? builderCv.fontScale : undefined,
+            })
+          : { text: cvText, pageCount: estimateTextPageCount(cvText) };
     const extractedText = extracted.text.slice(0, 30000);
     const pageCount = extracted.pageCount;
 
-    if ((file || savedCv) && extractedText.trim().length < 100) {
+    if ((file || savedCv || builderCv) && extractedText.trim().length < 100) {
       res.status(400).json({
         message: "Couldn't read enough text from this CV.",
       });

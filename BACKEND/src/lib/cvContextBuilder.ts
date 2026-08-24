@@ -49,13 +49,24 @@ import { BuilderFormData, coerceCertifications } from "../services/cvParseServic
    }
  
    if (excludeSection !== "skills" && formData.skills) {
-     const skills = formData.skills.skills || [];
+     const categories = formData.skills.skillCategories || [];
+     const legacySkills = (formData.skills as any).skills || [];
+     const formattedCategories = categories
+       .filter((cat) => cat.name || (cat.skills && cat.skills.length > 0))
+       .map((cat) => (cat.name ? `${cat.name}: ${cat.skills.join(", ")}` : cat.skills.join(", ")));
+
+     const skillsText = formattedCategories.length > 0
+       ? formattedCategories.join("; ")
+       : legacySkills.length > 0
+         ? legacySkills.join(", ")
+         : "";
+
      const certifications = coerceCertifications(formData.skills.certifications)
        .map((cert) => [cert.name, cert.issuer, cert.date].filter(Boolean).join(" · "))
        .join("; ");
-     if (skills.length > 0 || formData.skills.languages || certifications) {
+     if (skillsText || formData.skills.languages || certifications) {
        parts.push(`\n--- SKILLS & CREDENTIALS ---`);
-       if (skills.length > 0) parts.push(`Skills: ${skills.join(", ")}`);
+       if (skillsText) parts.push(`Skills: ${skillsText}`);
        if (formData.skills.languages) parts.push(`Languages: ${formData.skills.languages}`);
        if (certifications) parts.push(`Certifications: ${certifications}`);
      }
@@ -63,4 +74,3 @@ import { BuilderFormData, coerceCertifications } from "../services/cvParseServic
  
    return parts.join("\n").trim();
  }
- 

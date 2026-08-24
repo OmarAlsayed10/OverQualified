@@ -29,7 +29,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AI_ENDPOINTS, CV_ENDPOINTS } from '../../../constants/endpoints';
 import { track } from '../../../lib/analytics';
 import { addCustomSection, customSectionId, setCurrentCvId, setCvTitle, setFontScale, setPageCount, setSectionOrder, updateFormData, updateSection } from '../../../redux/store/slices/cvBuilderSlice';
-import { builderSnapshotFrom, clearBuilderHistory, reapplyBuilderSnapshot, restoreBuilderSnapshot } from '../../../redux/store/slices/builderHistoryActions';
+import { builderSnapshotFrom, clearBuilderHistory, reapplyBuilderSnapshot, recordBuilderSnapshot, restoreBuilderSnapshot } from '../../../redux/store/slices/builderHistoryActions';
 import type { RootState } from '../../../redux/store/store';
 import { cvFormToPdfProps } from '../../../templates/pdf/cvFormToPdfProps';
 import { useTemplate } from '../../../hooks/useTemplate';
@@ -39,8 +39,10 @@ import ConversationalBuilder from '../components/ConversationalBuilder/Conversat
 import ChooseTemplate from '../sidebar/components/ChooseTemplate';
 import AddSectionDialog from '../components/AddSectionDialog/AddSectionDialog';
 import { useSkillAutoExtract } from '../hooks/useSkillAutoExtract';
+import { mergeSkillCategories, mergeSkillsIntoCategories } from '../skillCategories';
 import { detectDateStyles, hasWeakBullets, MIN_READABLE_FONT_SCALE, preferredSectionOrder, runCvChecks, spellOutCvDates } from '../cvChecks';
 import type { CvCheck } from '../cvChecks';
+import BuilderReviewPanel from './BuilderReviewPanel';
 import builder from './builder.tokens';
 
 const sectionLabels = {
@@ -191,7 +193,14 @@ const Builder = () => {
       dispatch(updateSection({ section: 'personalInfo', data: { ProfessionalSummary: response.data.result } }));
     } else if (checkId === 'too-few-skills') {
       const response = await axios.post(AI_ENDPOINTS.generateSmartSkills, { formData }, { withCredentials: true });
-      dispatch(updateSection({ section: 'skills', data: { skills: response.data.skills } }));
+      const currentCategories = formData.skills.skillCategories || [];
+      if (Array.isArray(response.data?.skillCategories)) {
+        const merged = mergeSkillCategories(currentCategories, response.data.skillCategories);
+        dispatch(updateSection({ section: 'skills', data: { skillCategories: merged } }));
+      } else if (Array.isArray(response.data?.skills)) {
+        const merged = mergeSkillsIntoCategories(currentCategories, response.data.skills);
+        dispatch(updateSection({ section: 'skills', data: { skillCategories: merged } }));
+      }
     } else if (checkId === 'too-many-pages') {
       const response = await axios.post(
         AI_ENDPOINTS.optimizeCvLength,
@@ -269,6 +278,13 @@ const Builder = () => {
     }
   };
 
+  const applyOptimizedFormData = (optimizedFormData: typeof formData) => {
+    dispatch(recordBuilderSnapshot(builderSnapshotFrom(builderState)));
+    dispatch(updateFormData(optimizedFormData));
+    setWorkspaceKey((key) => key + 1);
+    flashNotice('success', t('Final safe fixes applied.'));
+  };
+
   const noticeBar = notice && (
     <Box sx={builder.alertBar}>
       <Alert severity={notice.type}>{notice.text}</Alert>
@@ -288,7 +304,18 @@ const Builder = () => {
       {done ? (
         <>
           <Box sx={builder.donePreview}>
-            <LivePreviewPane />
+            <Box sx={builder.donePreviewDocument}>
+              <LivePreviewPane />
+            </Box>
+            <Box sx={builder.doneReviewRail}>
+              <BuilderReviewPanel
+                formData={formData}
+                sectionOrder={sectionOrder}
+                template={choosenTemp}
+                fontScale={fontScale}
+                onApply={applyOptimizedFormData}
+              />
+            </Box>
           </Box>
           <Box sx={builder.doneBar}>
             <Button startIcon={<ArrowLeft size={18} />} onClick={() => setDone(false)} sx={builder.ghostButton}>

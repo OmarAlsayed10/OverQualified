@@ -1,6 +1,6 @@
 import { Box, CircularProgress, CssBaseline, ThemeProvider } from "@mui/material";
 import { Provider } from "react-redux";
-import { createBrowserRouter, Navigate, Outlet, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, redirect, RouterProvider } from "react-router-dom";
 import Error from "./pages/error";
 import store from "./redux/store/store";
 import Layout from "./pages/layout";
@@ -193,12 +193,14 @@ const appRoutes = [
           </ProtectedRoute>
         ),
       },
-      { path: "Blogs", element: <Blog /> },
+      { path: "blogs", caseSensitive: true, element: <Blog /> },
+      { path: "Blogs", caseSensitive: true, element: <Navigate to="/blogs" replace /> },
       { path: "pricing", element: <PricingPage /> },
-
-      { path: "Blogs/:id", element: <BlogDetail /> },
+      { path: "blogs/:id", caseSensitive: true, element: <BlogDetail /> },
+      { path: "Blogs/:id", caseSensitive: true, loader: ({ params }) => redirect(`/blogs/${params.id || ''}`) },
       { path: "*", element: <Error /> },
-      { path: "Pro-Features", element: <PricingSection /> },
+      { path: "pro-features", caseSensitive: true, element: <PricingSection /> },
+      { path: "Pro-Features", caseSensitive: true, element: <Navigate to="/pro-features" replace /> },
       { path: "settings", element: <Settings /> },
       { path: "templates", element: <TemplatesPage /> },
       { path: "help", element: <HelpCenter /> },

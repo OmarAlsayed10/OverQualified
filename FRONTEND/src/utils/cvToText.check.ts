@@ -11,7 +11,7 @@ const base = {
     jobTitle: "Engineer", company: "Acme", location: "Cairo", startDate: "2020", endDate: "2024",
     description: "- Built the billing service. - Cut load time 40%.",
   }],
-  projects: [{ name: "Muhtaraf", technologies: "React", description: "CV builder" }],
+  projects: [{ name: "OverQualified", technologies: "React", description: "CV builder" }],
   education: [{ degree: "BSc", institution: "Cairo University", startYear: "2016", endYear: "2020" }],
 };
 
@@ -56,5 +56,18 @@ assert.ok(mixed.includes("AWS SAA"));
 const sparse = cvToText({ personalInfo: { firstName: "A" } });
 assert.ok(!sparse.includes("SKILLS"));
 assert.ok(!sparse.includes("WORK EXPERIENCE"));
+
+const categorized = cvToText({
+  ...base,
+  skills: {
+    skillCategories: [
+      { name: "Languages", skills: ["JavaScript", "TypeScript", "Java"] },
+      { name: "Databases", skills: ["SQL", "MongoDB"] },
+    ],
+    languages: "English",
+  },
+});
+assert.ok(categorized.includes("Languages: JavaScript, TypeScript, Java"));
+assert.ok(categorized.includes("Databases: SQL, MongoDB"));
 
 console.log("cvToText ok");

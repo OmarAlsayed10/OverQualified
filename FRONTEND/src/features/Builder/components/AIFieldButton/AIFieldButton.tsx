@@ -8,6 +8,7 @@ import axios from 'axios';
 import { useAuth } from '../../../../hooks/useAuth';
 import { AI_ENDPOINTS } from '../../../../constants/endpoints';
 import type { RootState } from '../../../../redux/store/store';
+import type { SkillCategory } from '../../../../redux/store/slices/cvBuilderSlice';
 import { hasPaidAccess } from '../../../../utils/proAccess';
 import { COLORS } from "../../../../theme/tokens";
 
@@ -24,9 +25,10 @@ interface AIFieldButtonProps {
   raw?: string;
   jobTitle?: string;
   onResult: (value: string | string[]) => void;
+  onCategoriesResult?: (categories: SkillCategory[]) => void;
 }
 
-const AIFieldButton = ({ section, raw = '', jobTitle = '', onResult }: AIFieldButtonProps) => {
+const AIFieldButton = ({ section, raw = '', jobTitle = '', onResult, onCategoriesResult }: AIFieldButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,7 +50,11 @@ const AIFieldButton = ({ section, raw = '', jobTitle = '', onResult }: AIFieldBu
           { formData },
           { withCredentials: true },
         );
-        if (Array.isArray(data?.skills)) onResult(data.skills);
+        if (Array.isArray(data?.skillCategories) && onCategoriesResult) {
+          onCategoriesResult(data.skillCategories);
+        } else if (Array.isArray(data?.skills)) {
+          onResult(data.skills);
+        }
         return;
       }
 

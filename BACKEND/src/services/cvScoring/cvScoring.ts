@@ -20,11 +20,11 @@ import {
   scoreATSFormatting,
   atsCompatibilityObjective,
   formattingLayoutObjective,
+  grammarSpellingObjective,
+  impactResultsScore,
   experienceObjective,
   contentQualityObjective,
   keywordMatchObjective,
-  METRIC_WEIGHT,
-  VERB_WEIGHT,
 } from "./objectiveScores";
 import {
   yearsExperience,
@@ -59,6 +59,7 @@ export async function scoreCVWithBreakdown(
   const ats = scoreATSFormatting(text, language);
   const atsCompatibility = atsCompatibilityObjective(text, language, pageCount);
   const formattingLayout = formattingLayoutObjective(text, language);
+  const grammarSpelling = grammarSpellingObjective(text, language);
   const exp = experienceObjective(text, language);
   const summaryPresent = /\b(summary|profile|objective|about)\b/i.test(text)
     ? 5
@@ -141,12 +142,9 @@ export async function scoreCVWithBreakdown(
     c.owner = CATEGORY_OWNER[c.name] ?? "user";
   });
 
-  const pct = (v: number, max: number) =>
-    Math.max(0, Math.min(100, Math.round((v / max) * 100)));
-
   const IMPROVE_HINT_EN: Record<string, string> = {
     "Content Quality":
-      'Add a concrete achievement with a number to each role, e.g. "Shipped 3 features that cut support tickets 20%."',
+      "Clarify each role's scope and outcomes. Add a measurable result only when the candidate can verify the exact figure.",
     "ATS Compatibility":
       "Use standard section headings (Summary, Experience, Skills, Education) and a single-column layout so ATS parsers read every line.",
     "Keyword Match":
@@ -156,12 +154,12 @@ export async function scoreCVWithBreakdown(
     "Formatting & Layout":
       "Keep one consistent bullet style, spacing, and date format, and order sections Summary → Experience → Skills → Education.",
     "Impact & Results":
-      'Rewrite every bullet as: strong action verb + what you did + measurable result. Example: "Reduced API latency 35% by adding Redis caching and pagination."',
+      "Start each bullet with a strong action verb and describe the documented outcome. Include a metric only when the exact figure is verified.",
   };
 
   const IMPROVE_HINT_AR: Record<string, string> = {
     "Content Quality":
-      'أضف إنجازًا ملموسًا مدعومًا برقم لكل وظيفة، مثال: "أطلقت 3 مزايا خفّضت تذاكر الدعم بنسبة 20%."',
+      "وضّح نطاق كل وظيفة ونتائجها، ولا تضف نتيجة رقمية إلا إذا كان المرشح يستطيع التحقق من الرقم بدقة.",
     "ATS Compatibility":
       "استخدم عناوين أقسام قياسية (Summary, Experience, Skills, Education) وتخطيطًا بعمود واحد حتى تقرأ أنظمة ATS كل سطر.",
     "Keyword Match":
@@ -171,7 +169,7 @@ export async function scoreCVWithBreakdown(
     "Formatting & Layout":
       "حافظ على نمط نقاط ومسافات وتنسيق تاريخ موحد، ورتّب الأقسام Summary ← Experience ← Skills ← Education.",
     "Impact & Results":
-      'أعد صياغة كل نقطة كالتالي: فعل إنجاز قوي + ما قمت به + نتيجة قابلة للقياس. مثال: "خفّضت زمن استجابة الـ API بنسبة 35% بإضافة Redis caching والتقسيم إلى صفحات."',
+      "ابدأ كل نقطة بفعل إنجاز قوي واشرح النتيجة الموثقة، ولا تذكر مقياسًا إلا إذا كان الرقم الدقيق مثبتًا.",
   };
 
   const IMPROVE_HINT = isArabic ? IMPROVE_HINT_AR : IMPROVE_HINT_EN;
@@ -228,19 +226,11 @@ export async function scoreCVWithBreakdown(
     mk("Content Quality", contentQuality.score, contentQuality.details),
     mk("ATS Compatibility", atsCompatibility.score, atsCompatibility.details),
     mk("Keyword Match", keywordMatch.score, keywordMatch.details),
-    // The grader is asked to name the fix whenever it scores below 10. When it docks a point and
-    // then names nothing, that is the model hedging rather than a fault in the CV — there is no
-    // defect to show the user, so there is nothing to deduct. A real problem still scores as one:
-    // this only forgives the near-perfect-but-silent case.
-    mk(
-      "Grammar & Spelling",
-      q.grammarTip || q.grammarQuality < 8 ? pct(q.grammarQuality, 10) : 100,
-      [q.grammarTip],
-    ),
+    mk("Grammar & Spelling", grammarSpelling.score, grammarSpelling.details),
     mk("Formatting & Layout", formattingLayout.score, formattingLayout.details),
     mk(
       "Impact & Results",
-      pct(exp.metric + exp.verb, METRIC_WEIGHT + VERB_WEIGHT),
+      impactResultsScore(exp),
       exp.tips.filter((t) =>
         /quantif|number|percentage|action verb|metric|impact/i.test(t),
       ),

@@ -1,6 +1,6 @@
 import { contentLines, experienceObjective } from "../cvScoring";
 import { suspiciousColumnLines } from "../cvScoring/textParse";
-import { METRIC_WEIGHT, VERB_WEIGHT } from "../cvScoring/objectiveScores";
+import { contentQualityObjective, formattingLayoutObjective, grammarSpellingObjective, impactResultsScore, METRIC_WEIGHT, VERB_WEIGHT } from "../cvScoring/objectiveScores";
 
 // Bound to the source weights, so rebalancing Impact does not need every assertion rewritten.
 const METRIC_MAX = METRIC_WEIGHT;
@@ -64,6 +64,42 @@ Skills
 JavaScript, TypeScript, React, OpenLayers, GIS, Node.js, PostgreSQL
 `;
 
+describe("deterministic presentation diagnostics", () => {
+  it("2026-08 gives identical grammar findings for identical text", () => {
+    const cvText = "he Ultimate React Course — Udemy | Cairo,Egypt";
+
+    expect(grammarSpellingObjective(cvText)).toEqual(grammarSpellingObjective(cvText));
+    expect(grammarSpellingObjective(cvText)).toEqual({
+      score: 90,
+      details: [
+        'Correct "he Ultimate React Course" to "The Ultimate React Course".',
+      ],
+      checks: { courseTypo: "he Ultimate React Course" },
+    });
+  });
+
+  it("does not call inferred action-verb achievements bullet-less", () => {
+    const cvText = `
+Summary
+Software engineer building web applications.
+Experience
+Frontend Engineer | June 2025 – Present
+Designed and delivered production mapping features for enterprise users.
+Projects
+Portfolio Platform | 2024
+Built a full-stack portfolio and deployment workflow.
+Skills
+TypeScript, React
+Education
+Bachelor of Science | 2024
+`;
+
+    expect(formattingLayoutObjective(cvText).details).not.toContain(
+      "No bullet markers found — list achievements as bullets a parser can read",
+    );
+  });
+});
+
 describe("contentLines — wrapped vs unwrapped bullets", () => {
   it("produces the same number of bullets regardless of line wrapping", () => {
     const unwrapped = contentLines(UNWRAPPED_RESUME);
@@ -103,6 +139,36 @@ Digital Marketing | Market Research | Target Audience Analysis
     expect(suspiciousColumnLines(cvText)).toEqual([]);
   });
 });
+describe("transparent Impact and Content scoring", () => {
+  const cvText = `
+Summary
+Frontend engineer building accessible, maintainable web products with React and TypeScript for distributed teams and complex business workflows at scale.
+Experience
+Frontend Engineer
+Built a production dashboard used by 200 customers.
+Designed reusable components for the engineering team.
+Skills
+React, TypeScript, JavaScript, CSS, HTML, Redux, Git, Jest
+Education
+Bachelor of Science
+`;
+
+  it("treats verified figures as a bonus rather than penalizing their absence", () => {
+    const impact = experienceObjective(cvText);
+
+    expect(impactResultsScore(impact)).toBe(100);
+    expect(impact.tips).toContain(
+      "1 of 2 experience/project bullets have no verified numeric result. Verified figures can strengthen these bullets, but their absence does not reduce the score.",
+    );
+  });
+
+  it("does not duplicate the optional metric deduction in Content Quality", () => {
+    const impact = experienceObjective(cvText);
+
+    expect(contentQualityObjective(cvText, impact).score).toBe(100);
+  });
+});
+
 describe("experienceObjective — wrapped vs unwrapped scoring", () => {
   it("yields identical verb scores", () => {
     const unwrapped = experienceObjective(UNWRAPPED_RESUME);

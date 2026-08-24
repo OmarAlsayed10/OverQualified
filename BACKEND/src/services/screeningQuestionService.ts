@@ -1,4 +1,4 @@
-import { groqChat } from "../lib/groqChat";
+import { groqChat, MODELS } from "../lib/groqChat";
 
 export interface ScreeningQA {
   id: string;
@@ -120,7 +120,7 @@ Return ONLY a JSON object with this shape:
 }`;
 
     const res = await groqChat({
-      model: "llama-3.1-8b-instant",
+      model: MODELS.fast,
       messages: [
         { role: "system", content: "You are an expert recruiter and job interview coach. Return JSON only." },
         { role: "user", content: prompt },

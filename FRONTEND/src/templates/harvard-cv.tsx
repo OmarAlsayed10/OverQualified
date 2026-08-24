@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
+import SkillCategoryList from "./SkillCategoryList";
 import { certificationDetail } from "./certificationText";
 import { bulletLines } from "./bulletLines";
 
@@ -67,6 +68,7 @@ const HarvardCV = ({
   portfolio,
   summary,
   skills,
+  skillCategories,
   languages,
   certifications,
   experience,
@@ -79,6 +81,7 @@ const HarvardCV = ({
 }: any) => {
   const { t } = useTranslation();
   const contact = [location, phone, email, linkedin, github, portfolio].filter(Boolean).join("  •  ");
+  const hasSkills = Boolean((skillCategories && skillCategories.length > 0) || skills);
 
   const fullContent = (
     <Box sx={{ p: { xs: 5, sm: 6 }, boxSizing: "border-box", display: 'flex', flexDirection: 'column' }}>
@@ -136,10 +139,15 @@ const HarvardCV = ({
         </Box>
       )}
 
-      {skills && (
+      {hasSkills && (
         <Box data-cv-section="skills" sx={{ order: sectionOrder.indexOf('skills') }}>
           <Typography draggable data-cv-drag-handle sx={HEADING}>{t('Skills')}</Typography>
-          <Typography sx={{ fontFamily: SERIF, fontSize: "0.88rem", color: "#000", lineHeight: 1.4 }}>{skills}</Typography>
+          <SkillCategoryList
+            categories={skillCategories}
+            skills={skills}
+            categorySx={{ fontFamily: SERIF, fontSize: "0.88rem", color: "#000", lineHeight: 1.4 }}
+            labelSx={{ fontWeight: 700, fontFamily: SERIF, color: "#000" }}
+          />
         </Box>
       )}
       {languages && languages.length > 0 && (

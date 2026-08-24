@@ -10,7 +10,7 @@ const FooterBottom = () => {
       <Divider sx={footerBottom.divider} />
       <Box sx={footerBottom.row}>
         <Typography sx={footerBottom.copyright}>
-          {t('© 2026 Muhtaraf. All rights reserved.')}
+          {t('© 2026 OverQualified. All rights reserved.')}
         </Typography>
       </Box>
     </>

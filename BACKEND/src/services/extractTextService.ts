@@ -4,6 +4,21 @@ import fs from "fs";
 import axios from "axios";
 import { orderForReading } from "./readingOrder";
 
+const mathWithPreciseSum = Math as typeof Math & {
+    sumPrecise?: (values: Iterable<number>) => number;
+};
+
+mathWithPreciseSum.sumPrecise ??= (values) => {
+    let sum = 0;
+    let correction = 0;
+    for (const value of values) {
+        const next = sum + value;
+        correction += Math.abs(sum) >= Math.abs(value) ? sum - next + value : value - next + sum;
+        sum = next;
+    }
+    return sum + correction;
+};
+
 // unpdf's own extractText concatenates PDF text runs with no separator, so any layout that
 // splits a line into runs (columns, right-aligned dates, tabs) comes back as glued words.
 export const joinPageItems = (items: StructuredTextItem[]): string => items.map((item, index) => {

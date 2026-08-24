@@ -1,3 +1,5 @@
+import { AI_MODELS } from "../config/aiModels";
+
 export const CREDIT_PRICING_VERSION = "2026-07-18";
 export const COMMERCIAL_CREDIT_PRICE_CENTS = 70;
 export const MIN_CUSTOM_AMOUNT_CENTS = 2_500;
@@ -19,11 +21,11 @@ interface ProviderRate {
 }
 
 const PROVIDER_RATES: Record<string, ProviderRate> = {
-  "llama-3.1-8b-instant": { inputUsdPerMillion: 0.05, outputUsdPerMillion: 0.08 },
-  "llama-3.3-70b-versatile": { inputUsdPerMillion: 0.59, outputUsdPerMillion: 0.79 },
-  "groq/compound-mini": {
-    inputUsdPerMillion: 0.59,
-    outputUsdPerMillion: 0.79,
+  [AI_MODELS.fast]: { inputUsdPerMillion: 0.075, outputUsdPerMillion: 0.30 },
+  [AI_MODELS.versatile]: { inputUsdPerMillion: 0.15, outputUsdPerMillion: 0.60 },
+  [AI_MODELS.compoundMini]: {
+    inputUsdPerMillion: 0.15,
+    outputUsdPerMillion: 0.60,
     toolUsdPerRequest: 0.005,
   },
 };
@@ -69,7 +71,7 @@ const quoteFromCents = (cents: number): CreditQuote => ({
 });
 
 export const providerCostUsd = (model: string, usage: TokenUsage): number => {
-  const rate = PROVIDER_RATES[model] ?? PROVIDER_RATES["llama-3.3-70b-versatile"];
+  const rate = PROVIDER_RATES[model] ?? PROVIDER_RATES[AI_MODELS.versatile];
   const inputCost = ((usage.prompt_tokens ?? 0) * rate.inputUsdPerMillion) / 1_000_000;
   const outputCost = ((usage.completion_tokens ?? 0) * rate.outputUsdPerMillion) / 1_000_000;
   return inputCost + outputCost + (rate.toolUsdPerRequest ?? 0);

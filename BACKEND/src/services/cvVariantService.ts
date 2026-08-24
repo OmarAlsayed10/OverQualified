@@ -1,4 +1,4 @@
-import { groqChat } from "../lib/groqChat";
+import { groqChat, MODELS } from "../lib/groqChat";
 
 const EMPHASIS: Record<string, string> = {
   A: "Emphasize IMPACT and RESULTS: lead every experience bullet with an accomplishment (action verb + what + outcome), and surface quantified impact — but only using numbers already present in the original. Do not invent metrics.",
@@ -24,7 +24,7 @@ ${cvText}
 ---`;
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },

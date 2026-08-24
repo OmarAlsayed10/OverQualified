@@ -16,9 +16,18 @@ export function cvFormToPdfProps(formData: BuilderFormData) {
     portfolio: p.portfolio || '',
     photo: p.photo || '',
     summary: p.ProfessionalSummary || '',
-    skills: formData.skills.skills.join(', '),
+    skillCategories: (formData.skills.skillCategories || [])
+      .map((cat) => ({
+        name: (cat.name || '').trim(),
+        skills: (cat.skills || []).map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean),
+      }))
+      .filter((cat) => cat.skills.length > 0),
+    skills: (formData.skills.skillCategories || [])
+      .filter((c) => c.skills && c.skills.length > 0)
+      .map((c) => (c.name ? `${c.name}: ${c.skills.join(', ')}` : c.skills.join(', ')))
+      .join('\n') || (Array.isArray((formData.skills as any).skills) ? (formData.skills as any).skills.join(', ') : ''),
     languages: formData.skills.languages
-      ? formData.skills.languages.split(',').map((l) => ({ name: l.trim() }))
+      ? formData.skills.languages.split(',').map((language) => ({ name: language.trim() }))
       : [],
     certifications: formData.skills.certifications
       .filter((cert) => cert.name.trim())

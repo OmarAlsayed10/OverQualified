@@ -26,7 +26,7 @@ function CTABanner() {
         </Typography>
 
         <Typography sx={ctaBanner.subtitle}>
-          {t('Join over 50,000 professionals who\'ve accelerated their careers with Muhtaraf. Start building your perfect CV today — it\'s free.')}
+          {t('Build a focused, professional CV with OverQualified. Start today for free.')}
         </Typography>
 
         <Box sx={ctaBanner.buttonRow}>

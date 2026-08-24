@@ -9,11 +9,11 @@ export default function TermsPage() {
   const SECTIONS = [
     {
       title: "1. Acceptance of Terms",
-      body: `By accessing or using Muhtaraf ("the Service"), you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any part of these terms, you may not use the Service.`,
+      body: `By accessing or using OverQualified ("the Service"), you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any part of these terms, you may not use the Service.`,
     },
     {
       title: "2. Description of Service",
-      body: `Muhtaraf provides an AI-powered CV/resume building platform that allows users to create, edit, analyze, and export professional CVs. Premium features are available through a paid subscription ("Pro Plan").`,
+      body: `OverQualified provides an AI-powered CV/resume building platform that allows users to create, edit, analyze, and export professional CVs. Premium features are available through a paid subscription ("Pro Plan").`,
     },
     {
       title: "3. User Accounts",
@@ -29,7 +29,7 @@ export default function TermsPage() {
     },
     {
       title: "6. Intellectual Property",
-      body: `The Service, including all software, design, and content created by Muhtaraf, is our exclusive property and is protected by copyright, trademark, and other laws. Your CV data remains yours. By using the Service you grant us a limited licence to process and store your data solely to provide the Service.`,
+      body: `The Service, including all software, design, and content created by OverQualified, is our exclusive property and is protected by copyright, trademark, and other laws. Your CV data remains yours. By using the Service you grant us a limited licence to process and store your data solely to provide the Service.`,
     },
     {
       title: "7. Disclaimer of Warranties",
@@ -37,7 +37,7 @@ export default function TermsPage() {
     },
     {
       title: "8. Limitation of Liability",
-      body: `To the fullest extent permitted by law, Muhtaraf and its affiliates shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of — or inability to use — the Service, even if we have been advised of the possibility of such damages.`,
+      body: `To the fullest extent permitted by law, OverQualified and its affiliates shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of — or inability to use — the Service, even if we have been advised of the possibility of such damages.`,
     },
     {
       title: "9. Termination",
@@ -49,11 +49,11 @@ export default function TermsPage() {
     },
     {
       title: "11. Governing Law",
-      body: `These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which Muhtaraf operates, without regard to its conflict of law provisions.`,
+      body: `These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which OverQualified operates, without regard to its conflict of law provisions.`,
     },
     {
       title: "12. Contact",
-      body: `If you have questions about these Terms, please contact us at: support@muhtaraf.com`,
+      body: `If you have questions about these Terms, please contact us at: support@overqualified.com`,
     },
   ];
 
@@ -107,7 +107,7 @@ export default function TermsPage() {
             sx={{ color: COLORS.textSecondary, fontSize: "1rem", lineHeight: 1.8, mb: 5 }}
           >
             {t(
-              "Please read these Terms of Service carefully before using Muhtaraf. These terms govern your access to and use of our platform, products, and services.",
+              "Please read these Terms of Service carefully before using OverQualified. These terms govern your access to and use of our platform, products, and services.",
             )}
           </Typography>
 

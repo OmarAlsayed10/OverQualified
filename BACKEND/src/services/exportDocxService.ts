@@ -1,6 +1,4 @@
 import { Document, Packer, Paragraph, TextRun } from "docx";
-import path from "path";
-import fs from "fs";
 import { coerceCertifications } from "./cvParseService";
 
 // Replace ICV mongoose interface with a plain type
@@ -34,6 +32,7 @@ type CV = {
     description: string;
   }[];
   skills: {
+    skillCategories?: Array<{ name: string; skills: string[] }>;
     skills?: string[];
     languages?: string | string[];
     certifications?: unknown;
@@ -45,8 +44,31 @@ function formatDate(date: string | Date): string {
   return d.toLocaleString("default", { month: "short", year: "numeric" });
 }
 
-async function exportWordCV(CV: CV): Promise<Buffer> {
-  const skillsText = CV.skills?.skills?.join(", ") || "No skills listed";
+export async function exportWordCV(CV: CV): Promise<Buffer> {
+  const categories = (CV.skills?.skillCategories || []).filter(
+    (cat) => cat.name?.trim() || (cat.skills && cat.skills.length > 0),
+  );
+  const legacySkills = CV.skills?.skills || [];
+  const skillParagraphs = categories.length > 0
+    ? categories.map((cat) => {
+        const skillsText = Array.isArray(cat.skills) ? cat.skills.join(", ") : String(cat.skills || "");
+        const runs: TextRun[] = [];
+        if (cat.name?.trim()) {
+          runs.push(new TextRun({ text: `${cat.name.trim()}: `, bold: true }));
+        }
+        runs.push(new TextRun(skillsText));
+        return new Paragraph({
+          children: runs,
+          spacing: { after: 100 },
+        });
+      })
+    : [
+        new Paragraph({
+          children: [new TextRun(legacySkills.join(", ") || "No skills listed")],
+          spacing: { after: 200 },
+        }),
+      ];
+
   const languagesText = Array.isArray(CV.skills?.languages)
     ? CV.skills.languages.join(", ")
     : CV.skills?.languages || "No languages listed";
@@ -129,10 +151,7 @@ async function exportWordCV(CV: CV): Promise<Buffer> {
             children: [new TextRun({ text: "Skills", bold: true, size: 28 })],
             spacing: { after: 200 },
           }),
-          new Paragraph({
-            children: [new TextRun(skillsText)],
-            spacing: { after: 400 },
-          }),
+          ...skillParagraphs,
 
           new Paragraph({
             children: [new TextRun({ text: "Languages", bold: true, size: 28 })],

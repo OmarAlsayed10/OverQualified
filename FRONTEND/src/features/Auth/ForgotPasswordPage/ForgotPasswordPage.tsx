@@ -76,7 +76,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <Container maxWidth={false} sx={loginPage.root}>
-      <title>Reset your password | Muhtaraf</title>
+      <title>Reset your password | OverQualified</title>
       <meta name="robots" content="noindex" />
 
       <Box sx={loginPage.homeLink}>

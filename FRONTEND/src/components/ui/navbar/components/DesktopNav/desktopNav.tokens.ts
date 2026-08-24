@@ -3,11 +3,11 @@ import { COLORS, RADIUS, SHADOWS } from '../../../../../theme/tokens';
 const desktopNav = {
   root: {
     flexGrow: 1,
-    display: { xs: 'none', md: 'flex' },
-    flexDirection: 'row reverse' as const,
+    display: { xs: 'none', lg: 'flex' },
+    flexDirection: 'row' as const,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: '40px',
+    gap: { lg: 1.5, xl: 3 },
   },
   navLink: (active: boolean) => ({
     position: 'relative',

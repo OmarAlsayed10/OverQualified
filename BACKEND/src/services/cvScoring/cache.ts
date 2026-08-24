@@ -3,7 +3,7 @@ import { LEVELS, Level, ScoreBreakdown } from "./constants";
 import { hasCache } from "../../lib/persistentCache";
 
 export const CACHE_MAX = 500;
-const SCORING_CACHE_VERSION = "2026-08-metric-quarter-weight";
+const SCORING_CACHE_VERSION = "2026-08-metrics-as-impact-bonus";
 export const scoreCache = new Map<string, ScoreBreakdown>();
 export function clearScoreCache(): void {
   scoreCache.clear();

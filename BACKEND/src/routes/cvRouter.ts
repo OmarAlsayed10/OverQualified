@@ -6,6 +6,7 @@ import { analyzeCVController } from "../controllers/cvAnalysisController";
 import { aiWritingAssist } from "../controllers/AIWritingController";
 import { GrammarController } from "../controllers/grammarCheckerController";
 import { adjustCVController } from "../controllers/cvAdjustController";
+import { improveBuilderCVController } from "../controllers/builderImproveController";
 import { exportAdjustedCVController } from "../controllers/exportAdjustedCVController";
 import { cvChatController, interviewAnswersController } from "../controllers/cvChatController";
 import { parseCvController, polishEntryController, conversationalBuildController, importCvController, optimizeCvLengthController, editFieldWithAIController, generateSmartSkillsController, uploadCvPhotoController } from "../controllers/cvBuilderAssistController";
@@ -101,6 +102,15 @@ router.post(
   requireCredits,
   withUserContext,
   GrammarController
+);
+router.post(
+  "/improve-builder-cv",
+  authenticateToken,
+  aiLimiter,
+  requireProUser,
+  requireCredits,
+  withUserContext,
+  improveBuilderCVController
 );
 router.post(
   "/adjust-cv",

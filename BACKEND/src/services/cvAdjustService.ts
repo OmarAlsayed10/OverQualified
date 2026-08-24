@@ -1,7 +1,9 @@
 import type { ScoreCategory, ScoreDimension } from "./cvScoring";
-import { groqChat } from "../lib/groqChat";
+import { groqChat, MODELS } from "../lib/groqChat";
 import { coerceFormData, type BuilderFormData } from "./cvParseService";
 import { WEAK_OPENER_WORDS, startsWithActionVerb } from "./cvScoring/constants";
+import { unsupportedNumberOccurrences } from "../lib/evidenceGrounding";
+import { requiresCandidateEvidence } from "./cvImprovementRules";
 
 export interface CVChange {
   section: string;
@@ -30,7 +32,7 @@ Keep every real role, project, skill, date, and metric — never delete content 
 - Use ONE date format throughout (e.g. "Jan 2023 – Present"). Make every role and education date match it exactly.
 - Projects: put each project's title on its OWN header line as "Project Name – short descriptor | Tech, Tech, Tech" (use " | ", NO leading bullet, and NO separate "Tech:" line). Under it, list ONLY real achievement bullets. Never turn the project name, the tech list, or a repo/live link into a bullet.
 - Start every experience/project bullet with a strong action verb (Built, Led, Reduced, Designed, Improved, Developed...). Never open a bullet with any of these, which the scorer counts as weak: ${WEAK_OPENER_WORDS.map((w) => `"${w}"`).join(", ")}.
-- Turn weak/duty bullets into accomplishment statements (verb + what + result), quantified ONLY with numbers already present. Never invent metrics.
+- Turn weak/duty bullets into accomplishment statements using only facts already present. Preserve numeric claims only in the original claim where they appeared.
 - Tighten the summary and skills wording; drop filler skills.
 Single column — no tables, no multi-column tabs, no vertical bars.`;
 
@@ -80,18 +82,18 @@ const goldExample = (jake: boolean) => `═══ GOLD-STANDARD SHAPE — match 
 Sample Candidate
 ${jake
   ? `Full Stack Developer
-+1-000-000-0000 | sample@example.com | github.com/sample | linkedin.com/in/sample`
-  : `Full Stack Developer | React, Node.js, TypeScript | City, ST | +1-000-000-0000 | sample@example.com | github.com/sample | linkedin.com/in/sample`}
+sample@example.com | github.com/sample | linkedin.com/in/sample`
+  : `Full Stack Developer | React, Node.js, TypeScript | City | sample@example.com | github.com/sample | linkedin.com/in/sample`}
 SUMMARY
-Full Stack Developer delivering measurable impact across 8+ apps: 45% lower API latency, 60% more frequent deploys, 38% faster page loads.
+Full Stack Developer building reliable web applications with documented frontend and backend experience.
 EXPERIENCE
-Full Stack Developer | Nimbus Cloud Systems — Remote | Jan 2023 – Present
-- Reduced API latency 45% by adding Redis caching and query optimization
-- Led a team of 4 engineers, shipping 20+ features across 10 sprints
+Full Stack Developer | Nimbus Cloud Systems — Remote | Start – Present
+- Improved API responsiveness through caching and query optimization
+- Delivered product features across documented releases
 PROJECTS
 TaskFlow – Team Productivity Platform | React, Node.js, PostgreSQL
-- Built a real-time task app adopted by 500+ teams
-- Implemented WebSocket live collaboration, cutting sync latency 70%
+- Built a real-time task application for collaborative work
+- Implemented live collaboration with WebSocket communication
 SKILLS
 Languages: JavaScript, TypeScript, Python
 Frontend: React, Next.js, Redux, Tailwind CSS
@@ -100,7 +102,6 @@ Notice: the project title is a HEADER line ending in " | Tech stack" — NEVER a
 
 export async function adjustCV(
   cvText: string,
-  currentScore: number,
   negativeFeedback: string[],
   sectionsToImprove: { section: string; suggestion: string }[],
   breakdown: ScoreCategory[],
@@ -112,10 +113,6 @@ export async function adjustCV(
   const role = targetRole.trim();
   const lvl = level.trim();
 
-  // Tips that push the model to INVENT numbers — never forward these to the optimizer.
-  const QUANTIFY_TIP =
-    /quantif|with numbers|no number|percentage|measurable result|\$\s?figure|reduced api latency/i;
-
   // The exact per-dimension tips the user sees in the score breakdown — these ARE the fix list.
   const fixList = dimensions
     .filter((d) => d.score < 100)
@@ -125,17 +122,17 @@ export async function adjustCV(
           (t) =>
             t &&
             !/nothing blocking|strong here|nothing to fix/i.test(t) &&
-            !QUANTIFY_TIP.test(t)
+            !requiresCandidateEvidence(t)
         )
-        .map((t) => `  • [${d.name} ${d.score}] ${t}`)
+        .map((t) => `  • [${d.name}] ${t}`)
     )
     .join("\n");
 
   // Weakest categories as secondary context.
   const gaps = breakdown
-    .filter((c) => c.tip !== null && !QUANTIFY_TIP.test(c.tip!))
+    .filter((c) => c.tip !== null && !requiresCandidateEvidence(c.tip!))
     .sort((a, b) => a.earned / a.max - b.earned / b.max)
-    .map((c) => `  • [${c.name}] ${c.earned}/${c.max} — ${c.tip}`)
+    .map((c) => `  • [${c.name}] ${c.tip}`)
     .join("\n");
 
   // AI qualitative notes as supplementary context
@@ -146,15 +143,13 @@ export async function adjustCV(
 
   const systemPrompt = `You are a world-class CV writer. Rewrite this CV to genuinely improve its quality against real hiring standards. Improve substance, not surface metrics. You may ONLY use facts present in the original. Adding ANY number, percentage, or metric that is not already in the original CV is a critical failure — never write "by 40%", "500+ users", or any figure the candidate did not state. If a bullet has no number in the original, it must have no number in your rewrite.`;
 
-  const userPrompt = `CURRENT SCORE: ${currentScore}/100
-
-═══ FIX LIST — apply EVERY item that does not require inventing data ═══
+  const userPrompt = `═══ FIX LIST — apply EVERY item that does not require inventing data ═══
 ${fixList || gaps || "  (no specific issues flagged — apply the quality bar below)"}
 
 ═══ HARD RULES ═══
 - The output MUST begin with the candidate's header: line 1 is their real Full Name (never "Summary" or any section word), then their real contact facts (role, email, phone, LinkedIn, GitHub, location) laid out exactly as the REQUIRED FORMAT section below specifies. Only THEN comes the first section. Never drop the name or any contact detail.
 - Apply every fix above: reorder the sections to Summary → Experience → Skills → Education, use standard heading lines, unify to ONE date format, rewrite the exact dates flagged (e.g. "09/2021 – 07/2024" → "September 2021 – July 2024"), add or sharpen the Professional Summary using the candidate's real content, lead every bullet with a strong action verb, and remove any multi-column / tab / vertical-bar formatting.
-- KEEP every real number, percentage, and metric the candidate already wrote — NEVER drop a quantified result. Surface them: keep existing metrics in the summary and inside the matching bullets (e.g. if the CV says "improved page load speed by 40%", that number must survive in the rewrite).
+- KEEP every real number, percentage, and metric exactly where its original claim appears. Never repeat one in an additional claim or move it to imply a different result.
 - The ONLY things you may NEVER do: invent or change any number, percentage, or metric; invent skills, employers, job titles, calendar dates, schools, or degrees the candidate did not state. If a fix says "quantify" a bullet or "add N skills" and that data is not already in the CV, SKIP only that single item and apply all the others.
 - Preserve every real detail — the candidate's name, contact links, and every role, project, skill, credential, and section (Courses, Certifications, Awards, Publications, etc.). Never delete content to shorten.
 
@@ -251,10 +246,10 @@ FORMDATA rules — this is the SAME CV as above, just as fields instead of text:
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const response = await groqChat({
-      model: "llama-3.3-70b-versatile",
+      model: MODELS.versatile,
       messages,
       temperature: 0,
-      max_tokens: 6000,
+      max_tokens: 4500,
     });
 
     const raw = response.choices[0].message?.content || "";
@@ -265,22 +260,25 @@ FORMDATA rules — this is the SAME CV as above, just as fields instead of text:
     }
 
     const candidate = cvMatch[1].trim();
-    const invented = fabricatedMetrics(candidate, cvText);
+    const formData = parseFormData(raw);
+    const invented = [
+      ...unsupportedNumberOccurrences(candidate, cvText),
+      ...(formData ? unsupportedNumberOccurrences(JSON.stringify(formData), cvText) : []),
+    ];
     const weakBullets = weakOpenings(candidate);
 
     if (invented.length === 0 && weakBullets.length === 0) {
-      return { adjustedCV: candidate, changes: parseChanges(raw), formData: parseFormData(raw) };
+      return { adjustedCV: candidate, changes: parseChanges(raw), formData };
     }
 
-    // Naming the banned words in the prompt was not enough on its own — a real run still returned
-    // "Participated in 90% of code reviews". The model has to be shown the offending bullet back.
+    // Naming the banned words in the prompt was not enough on its own, so the model has to be shown the offending bullet back.
     if (invented.length === 0) {
       console.warn(`cvAdjustService: ${weakBullets.length} weak bullet opening(s) — retry ${attempt + 1}/2`);
-      lastGoodRewrite = { adjustedCV: candidate, changes: parseChanges(raw), formData: parseFormData(raw) };
+      lastGoodRewrite = { adjustedCV: candidate, changes: parseChanges(raw), formData };
       messages.push({ role: "assistant", content: raw });
       messages.push({
         role: "user",
-        content: `These bullets open with a weak verb, which the scorer penalises:\n${weakBullets.map((b) => `  • ${b}`).join("\n")}\n\nRewrite ONLY those bullets to open with a strong action verb (Reviewed, Led, Built, Improved, Mentored...), keeping every fact and every number exactly as it is — "Participated in 90% of code reviews" becomes "Reviewed 90% of code reviews". Return the full CV again in the exact same CV_START/CV_END, CHANGES_START/CHANGES_END and FORMDATA_START/FORMDATA_END format.`,
+        content: `These bullets open with a weak verb, which the scorer penalises:\n${weakBullets.map((b) => `  • ${b}`).join("\n")}\n\nRewrite ONLY those bullets to open with a strong action verb, keeping every fact and every number in its original claim. Return the full CV again in the exact same CV_START/CV_END, CHANGES_START/CHANGES_END and FORMDATA_START/FORMDATA_END format.`,
       });
       continue;
     }
@@ -313,21 +311,4 @@ FORMDATA rules — this is the SAME CV as above, just as fields instead of text:
       },
     ],
   };
-}
-
-// Achievement-metric fabrication: percentages and "N+" counts that appear in the
-// rewrite but not the original. Dates, versions, and matching counts are left alone.
-function fabricatedMetrics(adjusted: string, original: string): string[] {
-  const norm = (s: string) => s.replace(/[.,]$/, "");
-  const origTokens = new Set(
-    (original.match(/\d[\d,.]*\+?%?/g) || []).map(norm)
-  );
-  const out = new Set<string>();
-  for (const rawTok of adjusted.match(/\d[\d,.]*\+?%?/g) || []) {
-    const tok = norm(rawTok);
-    if ((tok.includes("%") || tok.endsWith("+")) && !origTokens.has(tok)) {
-      out.add(tok);
-    }
-  }
-  return [...out];
 }

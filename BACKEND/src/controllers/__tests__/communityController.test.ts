@@ -4,8 +4,7 @@ jest.mock("../../lib/prisma", () => ({
     cV: { count: jest.fn() },
     analysisEvent: { count: jest.fn() },
     review: { findMany: jest.fn() },
-    job: { findMany: jest.fn() },
-    jobMatch: { findMany: jest.fn() },
+    user: { findMany: jest.fn() },
   },
 }));
 
@@ -35,12 +34,8 @@ describe("communityController", () => {
       { id: "r1", displayName: "Alice S.", rating: 5, description: "Awesome!", createdAt: new Date() },
       { id: "r2", displayName: "Bob K.", rating: 4, description: "Great tool!", createdAt: new Date() },
     ]);
-    (prisma.job.findMany as any).mockResolvedValue([
+    (prisma.user.findMany as any).mockResolvedValue([
       { location: "Cairo, Egypt" },
-      { location: "Dubai, UAE" },
-    ]);
-    (prisma.jobMatch.findMany as any).mockResolvedValue([
-      { location: "New York, USA" },
     ]);
 
     await communityController(req, res);
@@ -50,7 +45,7 @@ describe("communityController", () => {
       cvsAnalyzed: 75,
       averageRating: 4.5,
       reviewCount: 2,
-      countries: 3,
+      countries: 1,
       reviews: expect.arrayContaining([
         expect.objectContaining({ id: "r1", rating: 5 }),
         expect.objectContaining({ id: "r2", rating: 4 }),
@@ -62,8 +57,7 @@ describe("communityController", () => {
     (prisma.cV.count as any).mockResolvedValue(0);
     (prisma.analysisEvent.count as any).mockResolvedValue(0);
     (prisma.review.findMany as any).mockResolvedValue([]);
-    (prisma.job.findMany as any).mockResolvedValue([]);
-    (prisma.jobMatch.findMany as any).mockResolvedValue([]);
+    (prisma.user.findMany as any).mockResolvedValue([]);
 
     await communityController(req, res);
 

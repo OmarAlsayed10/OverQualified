@@ -1,5 +1,6 @@
 import type { BuilderFormData, CvSection } from '../../redux/store/slices/cvBuilderSlice';
 import { bulletLines } from '../../templates/bulletLines.ts';
+import { countTotalSkills } from './skillCategories';
 
 // `message` is an i18n key with {{placeholders}}; the caller resolves it with `values` so the
 // counts inside a suggestion do not break translation lookup.
@@ -167,13 +168,14 @@ export const runCvChecks = (
     });
   }
 
-  if (formData.skills.skills.length < MIN_SKILLS) {
+  const skillCount = countTotalSkills(formData.skills.skillCategories);
+  if (skillCount < MIN_SKILLS) {
     checks.push({
       id: 'too-few-skills',
       section: 'skills',
       severity: 'tip',
       message: 'You listed {{count}} skills. {{target}}+ gives keyword matching something to work with.',
-      values: { count: formData.skills.skills.length, target: MIN_SKILLS },
+      values: { count: skillCount, target: MIN_SKILLS },
     });
   }
 

@@ -86,7 +86,7 @@ const Blog = () => {
               <Link
                 key={post.id}
                 component={RouterLink}
-                to={`/Blogs/${post.slug}`}
+                to={`/blogs/${post.slug}`}
                 sx={{ textDecoration: "none", flex: "0 1 480px" }}
               >
                 <Card

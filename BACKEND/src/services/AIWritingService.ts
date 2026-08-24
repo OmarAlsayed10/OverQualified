@@ -1,5 +1,5 @@
 import { groqChat, MODELS } from "../lib/groqChat";
-import { BuilderFormData } from "./cvParseService";
+import { BuilderFormData, SkillCategory, coerceSkillCategories } from "./cvParseService";
 import { buildCvContext } from "../lib/cvContextBuilder";
 
 // The CV keeps whatever language it is already written in, regardless of the language
@@ -27,7 +27,7 @@ export async function polishEntry(
   const cvContext = formData ? buildCvContext(formData, { compact: true }) : "";
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     messages: [
       { role: "system", content: `You turn a candidate's rough notes into polished, professional CV text. Use ONLY the facts they give — never invent metrics, employers, dates, or achievements. Return only the text, no preamble.\n\nLANGUAGE:\nWrite the output in ${cvOutputLanguage(cvContext)}. This is fixed. The notes may be written in Arabic, English, or a mix — never mirror the language of the notes, and never switch languages because the notes were phrased in another one.\n\nCRITICAL — CREATIVE ENHANCEMENT:\nDo NOT just split or reformat the user's exact words into separate bullets. You MUST creatively rewrite and enhance the content into polished, impactful professional language:\n- Start each bullet with a unique, strong action verb. NEVER repeat the same verb across bullets.\n- Transform plain statements into achievement-oriented bullets: 'Accomplished [X] by doing [Y], resulting in [Z]' — but ONLY when the user actually stated the result. Otherwise write the action alone.\n- Preserve the user's facts and metrics but elevate the language to sound professional and impactful\n- Use industry-standard terminology and keywords naturally\n\nHARD LIMIT — ENHANCE WORDING, NEVER ADD FACTS:\nEnhancement means better wording for what the user said. It never means new information.\n- Never invent outcomes, results, metrics, scope, tools, or responsibilities the user did not state.\n- Write no more bullets than the user's facts support. Never pad to reach a target count.\n- A certification, course, or credential is a completed qualification, not a job duty. Never expand it into responsibilities performed or results achieved.\n- If the note is too thin to enhance, return it cleanly worded and stop.\n- NEVER open a summary with cliché phrases like 'Results-Driven', 'Highly motivated', 'Dynamic professional', 'Seasoned', 'Detail-oriented', 'Passionate', or 'Expert'. Lead with the candidate's actual role title or a concrete strength instead.\n\nALWAYS follow ATS (Applicant Tracking System) rules:\n- Quantify achievements with metrics where the user provides data\n- Use industry keywords naturally\n- Avoid personal pronouns (I, me, my)\n- Use simple bullet format (start each with '- ') for experience/project descriptions\n- Keep content concise and scannable${cvContext ? `\n\nCANDIDATE'S FULL CV CONTEXT:\n${cvContext}\n\nUse this context to ensure your polished text complements the rest of their CV. Avoid repeating action verbs or achievements that already exist in their other entries.` : ""}` },
       { role: "user", content: `Section: ${sectionName}${jobTitle ? ` (target role: ${jobTitle})` : ""}\nRough notes: ${raw}\n\nWrite ${rule}` },
@@ -132,7 +132,7 @@ ABSOLUTE RULES — VIOLATION IS UNACCEPTABLE:
   let content = "";
   for (let attempt = 0; attempt < 2; attempt++) {
     const response = await groqChat({
-      model: "llama-3.3-70b-versatile",
+      model: MODELS.versatile,
       response_format: { type: "json_object" },
       messages,
       temperature: 0.3,
@@ -206,7 +206,7 @@ export async function editFieldWithAI(
   const cvContext = formData ? buildCvContext(formData, { excludeSection: sectionName }) : '';
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     messages: [
       {
         role: "system",
@@ -259,45 +259,40 @@ ${cvContext ? `\nCANDIDATE'S FULL CV CONTEXT:\n${cvContext}\n\nYou have the cand
   return (response.choices[0].message?.content || "").trim();
 }
 
-export async function generateSmartSkills(formData: BuilderFormData): Promise<string[]> {
+export async function generateSmartSkills(formData: BuilderFormData): Promise<SkillCategory[]> {
   const cvContext = buildCvContext(formData);
   if (!cvContext) return [];
 
   const response = await groqChat({
-    model: "llama-3.3-70b-versatile",
+    model: MODELS.versatile,
     response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
-        content: `You are an expert technical recruiter and CV analyzer. Your job is to extract and infer a comprehensive list of professional skills based ON ACTUAL EVIDENCE from a candidate's CV text.
+        content: `You are an expert technical recruiter and CV analyzer. Extract and infer professional skills based only on evidence in the candidate's CV.
 
 RULES:
-1. Extract explicitly mentioned tools, languages, frameworks, methodologies, and platforms.
-2. Infer highly probable related skills IF the evidence is strong (e.g., if they deployed containerized microservices to AWS, you can infer Docker/AWS if not explicitly stated, but do not invent unrelated skills).
-3. Include relevant soft skills and domain expertise (e.g., Team Leadership, Agile/Scrum, Financial Modeling) if demonstrated by their achievements.
-4. Output a clean, deduplicated array of strings. Do not include categories or groupings, just a flat array of the best 10-25 skills.
+1. Extract explicitly mentioned tools, languages, frameworks, methodologies, platforms, soft skills, and domain expertise.
+2. Infer related skills only when the evidence is strong.
+3. Group skills into specific professional categories such as Languages, Frameworks & Libraries, Databases, Tools & Platforms, Methodologies, Domain Expertise, and Soft Skills.
+4. Use only relevant, non-empty categories and return 10-25 deduplicated skills total.
 
 Return JSON in exactly this format:
 {
-  "skills": ["Skill 1", "Skill 2", "Skill 3"]
+  "skillCategories": [
+    { "name": "Languages", "skills": ["JavaScript", "TypeScript", "Java"] },
+    { "name": "Databases", "skills": ["SQL", "MongoDB", "NoSQL"] }
+  ]
 }`
       },
       {
         role: "user",
-        content: `CANDIDATE'S CV CONTEXT:\n${cvContext}\n\nExtract and infer their skills.`
+        content: `CANDIDATE'S CV CONTEXT:\n${cvContext}\n\nExtract and categorize their skills.`
       }
     ],
     temperature: 0.1,
   }, { fallback: false });
 
-  try {
-    const parsed = JSON.parse(response.choices[0].message?.content || "{}");
-    if (Array.isArray(parsed.skills)) {
-      return parsed.skills.filter((s: any) => typeof s === "string");
-    }
-  } catch (e) {
-    console.error("Failed to parse JSON response for smart skills", e);
-  }
-  
-  return [];
+  const parsed = JSON.parse(response.choices[0].message?.content || "{}");
+  return coerceSkillCategories(parsed);
 }

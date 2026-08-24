@@ -1,8 +1,8 @@
-# About Muhtaraf
+# About OverQualified
 
-**Muhtaraf** is your ultimate AI-powered career assistant. Designed to help job seekers land their dream jobs, Muhtaraf combines intelligent resume building, deep AI resume analysis, automated job tracking, and career advice into one intuitive, easy-to-use platform.
+**OverQualified** is your ultimate AI-powered career assistant. Designed to help job seekers land their dream jobs, OverQualified combines intelligent resume building, deep AI resume analysis, automated job tracking, and career advice into one intuitive, easy-to-use platform.
 
-Whether you're crafting your first CV, tailoring your resume for a specific job application, or tracking opportunities across top job boards, Muhtaraf guides you every step of the way.
+Whether you're crafting your first CV, tailoring your resume for a specific job application, or tracking opportunities across top job boards, OverQualified guides you every step of the way.
 
 ---
 
@@ -94,7 +94,7 @@ Enjoy free access with flexible upgrade options when you need more power.
 ### 11. 📰 Career Blog & Help Center
 Stay informed with expert career advice.
 - **Career Guides & Articles**: Learn how to write effective resumes, ace interviews, and navigate career transitions.
-- **Help Center & FAQs**: Quick answers to common questions about using Muhtaraf.
+- **Help Center & FAQs**: Quick answers to common questions about using OverQualified.
 
 ---
 

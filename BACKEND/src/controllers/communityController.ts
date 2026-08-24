@@ -2,9 +2,6 @@ import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { countDistinctCountries } from "../lib/countryNormalize";
 
-// The home page hits this on every visit and it scans every job and job match to count
-// countries. The numbers move slowly, so they are computed on a schedule rather than per
-// request, and the last good payload is served if a recompute fails.
 const CACHE_TTL_MS = 60 * 60 * 1000;
 let cached: { at: number; payload: unknown } | null = null;
 
@@ -15,7 +12,7 @@ export const communityController = async (_req: Request, res: Response) => {
   }
 
   try {
-    const [cvsCreated, cvsAnalyzed, approvedReviews, jobLocations, jobMatchLocations] = await Promise.all([
+    const [cvsCreated, cvsAnalyzed, approvedReviews, userLocations] = await Promise.all([
       prisma.cV.count(),
       prisma.analysisEvent.count(),
       prisma.review.findMany({
@@ -29,15 +26,16 @@ export const communityController = async (_req: Request, res: Response) => {
           createdAt: true,
         },
       }),
-      prisma.job.findMany({ select: { location: true } }),
-      prisma.jobMatch.findMany({ select: { location: true }, distinct: ["location"] }),
+      prisma.user.findMany({
+        where: { emailVerified: true, location: { not: null } },
+        select: { location: true },
+        distinct: ["location"],
+      }),
     ]);
 
-    const allLocations = [
-      ...jobLocations.map((j: { location: string | null }) => j.location),
-      ...jobMatchLocations.map((j: { location: string | null }) => j.location),
-    ];
-    const countries = countDistinctCountries(allLocations);
+    const countries = countDistinctCountries(
+      userLocations.map((user: { location: string | null }) => user.location),
+    );
 
     const reviewCount = approvedReviews.length;
     const averageRating = reviewCount > 0
