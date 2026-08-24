@@ -21,6 +21,7 @@ import {
   IconButton,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ForumRoundedIcon from '@mui/icons-material/ForumRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -234,6 +235,15 @@ const ApplicationWorkspacePage = () => {
                 sx={{ borderRadius: 2 }}
               >
                 {t('Open Application')}
+              </Button>
+
+              <Button
+                variant="contained"
+                startIcon={<ForumRoundedIcon />}
+                onClick={() => navigate(`/interview-coach?jobId=${encodeURIComponent(matchId!)}`)}
+                sx={{ borderRadius: 2 }}
+              >
+                {t('Practice interview for this job')}
               </Button>
 
               <Select

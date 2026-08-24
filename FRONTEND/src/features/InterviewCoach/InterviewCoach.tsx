@@ -3,8 +3,8 @@ import { Box, Button, CircularProgress, Container, Typography } from "@mui/mater
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { useBlocker } from "react-router-dom";
-import { AI_ENDPOINTS, CV_ENDPOINTS, INTERVIEW_COACH_ENDPOINTS } from "../../constants/endpoints";
+import { useBlocker, useSearchParams } from "react-router-dom";
+import { AI_ENDPOINTS, CV_ENDPOINTS, INTERVIEW_COACH_ENDPOINTS, JOB_ENDPOINTS } from "../../constants/endpoints";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useFeedback } from "../../context/FeedbackContext";
 import InterviewHistory from "./InterviewHistory";
@@ -32,6 +32,8 @@ const emptySetup: InterviewSetupValues = {
 const InterviewCoach = () => {
   const { t, i18n } = useTranslation();
   const { notify, showEntitlement } = useFeedback();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get("jobId");
   const [cvs, setCvs] = useState<SavedCvOption[]>([]);
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<InterviewSession | null>(null);
@@ -95,20 +97,28 @@ const InterviewCoach = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [cvResponse, sessionResponse] = await Promise.all([
+        const [cvResponse, sessionResponse, jobResponse] = await Promise.all([
           axios.get(CV_ENDPOINTS.userCvs, { withCredentials: true }),
           axios.get(INTERVIEW_COACH_ENDPOINTS.sessions, { withCredentials: true }),
+          jobId ? axios.get(JOB_ENDPOINTS.details(jobId), { withCredentials: true }) : null,
         ]);
         const savedCvs: SavedCvOption[] = Array.isArray(cvResponse.data) ? cvResponse.data : [];
         setCvs(savedCvs);
         setSessions(sessionResponse.data.sessions ?? []);
         const preferredCv = savedCvs.find((cv) => cv.isPrimary) ?? savedCvs[0];
         const suggestedRole = roleSuggestionsFromCv(preferredCv)[0] ?? "";
+        const jobRole = typeof jobResponse?.data?.match?.title === "string"
+          ? jobResponse.data.match.title.trim().slice(0, 150)
+          : "";
+        const jobDescription = typeof jobResponse?.data?.description === "string"
+          ? jobResponse.data.description.trim().slice(0, 12000)
+          : "";
         setSetup((current) => ({
           ...current,
           source: preferredCv ? "saved" : "upload",
           cvId: preferredCv?.id ?? "",
-          targetRole: suggestedRole,
+          targetRole: jobRole || suggestedRole,
+          jobDescription,
         }));
       } catch (error) {
         requestError(error, "Could not load interview practice.");
@@ -117,7 +127,7 @@ const InterviewCoach = () => {
       }
     };
     void load();
-  }, [requestError]);
+  }, [jobId, requestError]);
 
   const changeSetup = (nextSetup: InterviewSetupValues) => {
     const sourceChanged = nextSetup.source !== setup.source

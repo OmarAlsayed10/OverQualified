@@ -9,6 +9,7 @@ import AddBusinessRoundedIcon from "@mui/icons-material/AddBusinessRounded";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { JOB_ENDPOINTS } from "../constants/endpoints";
@@ -242,6 +243,9 @@ const JobRadarPage = () => {
                   </Button>
                   <Button size="small" startIcon={<CompareArrowsIcon sx={{ fontSize: 16 }} />} onClick={() => navigate(`/career-match?mode=vacancy&jobId=${m.id}&title=${encodeURIComponent(m.title)}`)} sx={{ textTransform: "none", color: PRIMARY, fontWeight: 700, bgcolor: "rgba(42,92,69,0.08)", "&:hover": { bgcolor: "rgba(42,92,69,0.16)" } }}>
                     {t("Match vacancy")}
+                  </Button>
+                  <Button size="small" startIcon={<ForumRoundedIcon sx={{ fontSize: 16 }} />} onClick={() => navigate(`/interview-coach?jobId=${encodeURIComponent(m.id)}`)} sx={{ textTransform: "none", color: PRIMARY, fontWeight: 700 }}>
+                    {t("Practice interview for this job")}
                   </Button>
                   <Button size="small" startIcon={<DescriptionIcon sx={{ fontSize: 16 }} />} onClick={() => setCoverLetterMatch(m)} sx={{ textTransform: "none", color: PRIMARY, fontWeight: 600 }}>
                     {t("Cover letter")}

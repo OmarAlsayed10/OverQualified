@@ -1355,5 +1355,6 @@
   "Quit interview": "الانسحاب من المقابلة",
   "Quit this interview?": "هل تريد الانسحاب من هذه المقابلة؟",
   "This interview was quit and cannot be resumed.": "تم الانسحاب من هذه المقابلة ولا يمكن استئنافها.",
-  "Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?": "سيتوقف المؤقت ولن تتمكن من استئناف هذه المقابلة. هل أنت متأكد من رغبتك في الانسحاب؟"
+  "Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?": "سيتوقف المؤقت ولن تتمكن من استئناف هذه المقابلة. هل أنت متأكد من رغبتك في الانسحاب؟",
+  "Practice interview for this job": "تدرّب على مقابلة هذه الوظيفة"
 }
