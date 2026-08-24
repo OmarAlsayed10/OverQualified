@@ -1,27 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  List,
-  ListItemButton,
-  ListItemText,
-  MenuItem,
-  Popover,
-  Select,
-  Step,
-  StepButton,
-  Stepper,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { ArrowLeft, CheckCircle2, Download, Plus, LayoutTemplate, Redo, Save, ShieldAlert, Sparkles, Undo, Upload, Home } from "../../../components/icons/MuiIcons";
+import { Alert, Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { Home } from "../../../components/icons/MuiIcons";
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
@@ -42,7 +21,10 @@ import { useSkillAutoExtract } from '../hooks/useSkillAutoExtract';
 import { mergeSkillCategories, mergeSkillsIntoCategories } from '../skillCategories';
 import { detectDateStyles, hasWeakBullets, MIN_READABLE_FONT_SCALE, preferredSectionOrder, runCvChecks, spellOutCvDates } from '../cvChecks';
 import type { CvCheck } from '../cvChecks';
-import BuilderReviewPanel from './BuilderReviewPanel';
+import { BuilderDock } from './BuilderDock';
+import { BuilderDoneView } from './BuilderDoneView';
+import { BuilderNavigation } from './BuilderNavigation';
+import { CvSuggestionsPopover } from './CvSuggestionsPopover';
 import builder from './builder.tokens';
 
 const sectionLabels = {
@@ -302,89 +284,29 @@ const Builder = () => {
       </Tooltip>
 
       {done ? (
-        <>
-          <Box sx={builder.donePreview}>
-            <Box sx={builder.donePreviewDocument}>
-              <LivePreviewPane />
-            </Box>
-            <Box sx={builder.doneReviewRail}>
-              <BuilderReviewPanel
-                formData={formData}
-                sectionOrder={sectionOrder}
-                template={choosenTemp}
-                fontScale={fontScale}
-                onApply={applyOptimizedFormData}
-              />
-            </Box>
-          </Box>
-          <Box sx={builder.doneBar}>
-            <Button startIcon={<ArrowLeft size={18} />} onClick={() => setDone(false)} sx={builder.ghostButton}>
-              {t('Back')}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <Save size={18} />}
-              onClick={saveCV}
-              disabled={saving}
-              sx={builder.secondaryButton}
-            >
-              {saving ? t('Saving...') : t('Save to Profile')}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Download size={18} />}
-              onClick={downloadPdf}
-              disabled={downloading}
-              sx={builder.primaryButton}
-            >
-              {downloading ? t('Generating...') : t('Download')}
-            </Button>
-          </Box>
-        </>
+        <BuilderDoneView
+          formData={formData}
+          sectionOrder={sectionOrder}
+          template={choosenTemp}
+          fontScale={fontScale}
+          saving={saving}
+          downloading={downloading}
+          onBack={() => setDone(false)}
+          onSave={saveCV}
+          onDownload={downloadPdf}
+          onApply={applyOptimizedFormData}
+        />
       ) : (
         <>
-          <Box sx={builder.nameBar}>
-            <TextField
-              size="small"
-              variant="standard"
-              value={title}
-              onChange={(event) => dispatch(setCvTitle(event.target.value))}
-              placeholder={formData.personalInfo.professionalTitle.trim() || t('Untitled CV')}
-              inputProps={{ maxLength: 80, 'aria-label': t('CV name') }}
-              sx={builder.nameField}
-            />
-          </Box>
-
-          <Box sx={builder.stepperBar}>
-            <Stepper nonLinear activeStep={activeStep} alternativeLabel sx={builder.stepper}>
-              {steps.map((label, index) => (
-                <Step key={`${label}-${index}`}>
-                  <StepButton onClick={() => setActiveStep(index)}>{t(label)}</StepButton>
-                </Step>
-              ))}
-            </Stepper>
-            <Tooltip title={t('Add a section')}>
-              <IconButton onClick={() => setAddSectionOpen(true)} sx={{ ml: 1, flexShrink: 0 }}>
-                <Plus size={20} />
-              </IconButton>
-            </Tooltip>
-            <Box sx={builder.stepperCompact}>
-              <Typography sx={builder.stepperCompactCount}>
-                {activeStep + 1}/{steps.length}
-              </Typography>
-              <Select
-                variant="standard"
-                disableUnderline
-                value={activeStep}
-                onChange={(event) => setActiveStep(Number(event.target.value))}
-                sx={builder.stepperCompactSelect}
-              >
-                {steps.map((label, index) => (
-                  <MenuItem key={label} value={index}>{t(label)}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </Box>
+          <BuilderNavigation
+            title={title}
+            titlePlaceholder={formData.personalInfo.professionalTitle.trim() || t('Untitled CV')}
+            steps={steps}
+            activeStep={activeStep}
+            onTitleChange={(nextTitle) => dispatch(setCvTitle(nextTitle))}
+            onStepChange={setActiveStep}
+            onAddSection={() => setAddSectionOpen(true)}
+          />
 
           <Box sx={builder.mobileSwitch}>
             <ToggleButtonGroup
@@ -416,124 +338,32 @@ const Builder = () => {
             </Box>
           </Box>
 
-          <Box sx={builder.dock}>
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Undo last change')}>
-                <span>
-                  <IconButton onClick={undoLastChange} disabled={builderSnapshots.length === 0} sx={builder.dockButton}>
-                    <Undo size={22} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Undo')}</Typography>
-            </Box>
+          <BuilderDock
+            saving={saving}
+            downloading={downloading}
+            importing={importing}
+            undoCount={builderSnapshots.length}
+            redoCount={redoSnapshots.length}
+            checkCount={checks.length}
+            warningCount={warningCount}
+            fileInputRef={fileInputRef}
+            onUndo={undoLastChange}
+            onRedo={redoLastChange}
+            onChooseTemplate={() => setTemplateOpen(true)}
+            onEditWithAi={() => setChatOpen(true)}
+            onSave={saveCV}
+            onShowChecks={setChecksAnchor}
+            onDownload={downloadPdf}
+            onImport={importCV}
+          />
 
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Redo last change')}>
-                <span>
-                  <IconButton onClick={redoLastChange} disabled={redoSnapshots.length === 0} sx={builder.dockButton}>
-                    <Redo size={22} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Redo')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Choose Template')}>
-                <IconButton onClick={() => setTemplateOpen(true)} sx={builder.dockButton}>
-                  <LayoutTemplate size={22} />
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Choose Template')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Edit with AI')}>
-                <IconButton onClick={() => setChatOpen(true)} sx={builder.dockButton}>
-                  <Sparkles size={22} />
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Edit with AI')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Save')}>
-                <IconButton onClick={saveCV} disabled={saving} sx={builder.dockButton}>
-                  {saving ? <CircularProgress size={20} /> : <Save size={22} />}
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Save')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('CV Suggestions')}>
-                <IconButton onClick={(event) => setChecksAnchor(event.currentTarget)} sx={builder.dockButton}>
-                  <Badge badgeContent={checks.length} color={warningCount > 0 ? 'error' : 'primary'}>
-                    {checks.length === 0 ? <CheckCircle2 size={22} /> : <ShieldAlert size={22} />}
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('CV Suggestions')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Download')}>
-                <IconButton onClick={downloadPdf} disabled={downloading} sx={builder.dockButton}>
-                  {downloading ? <CircularProgress size={20} /> : <Download size={22} />}
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Download')}</Typography>
-            </Box>
-
-            <Box sx={builder.dockItem}>
-              <Tooltip title={t('Upload CV')}>
-                <IconButton component="label" sx={builder.dockButton}>
-                  {importing ? <CircularProgress size={20} /> : <Upload size={22} />}
-                  <input
-                    hidden
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(event) => importCV(event.target.files?.[0])}
-                  />
-                </IconButton>
-              </Tooltip>
-              <Typography sx={builder.dockLabel}>{t('Upload CV')}</Typography>
-            </Box>
-          </Box>
-
-          <Popover
-            open={Boolean(checksAnchor)}
-            anchorEl={checksAnchor}
+          <CvSuggestionsPopover
+            anchor={checksAnchor}
+            checks={checks}
+            applyingCheckId={applyingCheckId}
             onClose={() => setChecksAnchor(null)}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            slotProps={{ paper: { sx: { maxWidth: 340, borderRadius: 2 } } }}
-          >
-            {checks.length === 0 ? (
-              <Typography sx={{ p: 2, fontSize: 13 }}>{t('No issues found. Your CV covers the basics.')}</Typography>
-            ) : (
-              <List dense disablePadding>
-                {checks.map((check) => (
-                  <ListItemButton
-                    key={check.id}
-                    onClick={() => void applyCvSuggestion(check)}
-                    disabled={applyingCheckId !== null}
-                    sx={{ alignItems: 'flex-start', gap: 1 }}
-                  >
-                    <Box sx={{ mt: '2px', color: check.severity === 'warning' ? 'error.main' : 'text.secondary' }}>
-                      {applyingCheckId === check.id ? <CircularProgress size={16} /> : <ShieldAlert size={16} />}
-                    </Box>
-                    <ListItemText
-                      primary={t(check.message, check.values)}
-                      primaryTypographyProps={{ fontSize: 12.5, lineHeight: 1.45 }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            )}
-          </Popover>
+            onApply={(check) => void applyCvSuggestion(check)}
+          />
 
           <AddSectionDialog
             open={addSectionOpen}
