@@ -1,8 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import jwt from "jsonwebtoken";
 import "../config/passportConfig";
-import prisma from "../lib/prisma";
 
 import {
   register,
@@ -13,12 +11,12 @@ import {
   resetPassword,
   logout,
   getCurrentUser,
-  issueProToken,
   updateProfile,
   updateProfilePhoto,
   deleteProfilePhoto,
   deleteAccount,
-} from "../controllers/authController";
+  googleAuthCallback,
+} from "../controllers/auth";
 import { authenticateToken } from "../middleware/validateJWTMiddleware";
 import {
   listGitCredentialsController,
@@ -67,29 +65,9 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     failureRedirect: `${process.env.CLIENT_URL}/login`,
-  session: false,
+    session: false,
   }),
-  async (req: any, res) => {
-    try {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: req.user.id },
-      });
-
-      if (!dbUser) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-
-      // Sets the httpOnly auth cookie on the response; the token never travels
-      // in the redirect URL (where it would leak via history / Referer / logs).
-      issueProToken(res, dbUser);
-
-      res.redirect(`${process.env.CLIENT_URL}/auth/success`);
-    } catch (error) {
-      console.error("Google OAuth callback error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
+  googleAuthCallback,
 );
 
 export default router;

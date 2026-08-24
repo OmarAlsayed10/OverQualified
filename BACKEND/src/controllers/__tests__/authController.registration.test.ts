@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../lib/prisma";
 import { emailService } from "../../services/emailService";
-import { register } from "../authController";
+import { register } from "../auth";
 
 jest.mock("../../lib/prisma", () => ({
   __esModule: true,

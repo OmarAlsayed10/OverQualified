@@ -4,7 +4,7 @@ import prisma from "./prisma";
 // server ever runs more than one process — a logout only revokes on the node that served it.
 const revocations = new Map<string, number>();
 
-// Must match the `expiresIn` given to jwt.sign in authController.issueToken. A revocation
+// Must match the `expiresIn` used by authSessionService. A revocation
 // older than the longest-lived token can no longer reject anything, because any token it
 // would match has already failed signature verification on expiry.
 const TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
