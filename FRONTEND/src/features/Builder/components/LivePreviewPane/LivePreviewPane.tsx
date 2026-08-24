@@ -1,14 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { Box, IconButton, InputAdornment, Paper, Popover, TextField, Tooltip, ButtonGroup, Typography } from '@mui/material';
-import { ZoomIn, ZoomOut, Maximize, Minimize, ArrowLeft, ArrowRight } from "../../../../components/icons/MuiIcons";
-import { useTranslation } from 'react-i18next';
+import { Box } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import Preview from '../../Preview';
 import type { RootState } from '../../../../redux/store/store';
 import {
-  FONT_SCALE_MAX,
-  FONT_SCALE_MIN,
   moveCvSection,
   setFontScale,
   setPageCount,
@@ -18,12 +13,14 @@ import { useTemplate } from '../../../../hooks/useTemplate';
 import livePreviewPane from './livePreviewPane.tokens';
 import { cvSectionFrom, pageCountFrom, shouldApplyPageCount } from './previewEditing';
 import { applyPageBreaks, PAGE_HEIGHT, PAGE_WIDTH } from './pageBreaks';
-import { COLORS } from "../../../../theme/tokens";
+import { DragHints } from './DragHints';
+import { FontProbePopover } from './FontProbePopover';
+import { PreviewCanvas } from './PreviewCanvas';
+import { PreviewToolbar } from './PreviewToolbar';
 
 // Shared with the print page so both paginate against the same sheet.
 const DESIGN_WIDTH = PAGE_WIDTH;
 const DESIGN_HEIGHT = PAGE_HEIGHT;
-const FONT_SIZE_STEP = 0.5;
 // Long enough that crossing an edge on the way elsewhere does not turn the page.
 const PAGE_TURN_DELAY = 700;
 const PAGE_TURN_EDGE = 56;
@@ -32,7 +29,6 @@ const primaryFontFamily = (fontFamily: string) =>
   fontFamily.split(',')[0].replace(/["']/g, '').trim();
 
 export const LivePreviewPane = () => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const sectionOrder = useSelector((state: RootState) => state.cvBuilder.sectionOrder);
   const formData = useSelector((state: RootState) => state.cvBuilder.formData);
@@ -257,232 +253,45 @@ export const LivePreviewPane = () => {
 
   return (
     <Box ref={outerRef} sx={{ ...livePreviewPane.root, position: 'relative', overflow: 'hidden' }}>
-      <Paper elevation={0} sx={{ position: 'absolute', left: 16, bottom: 20, zIndex: 10, px: 1.25, py: 0.75, borderRadius: 2, bgcolor: COLORS.bgWhite, border: `1px solid ${COLORS.borderLight}` }}>
-        <Typography sx={{ fontSize: 11, color: COLORS.textSecondary, fontWeight: 600 }}>
-          {pageCount > 1 && draggedSection
-            ? t('Hold at the top or bottom edge to change page.')
-            : t('Drag section headings to reorder.')}
-        </Typography>
-      </Paper>
-
-      {pageTurnHint !== 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            ...(pageTurnHint === -1 ? { top: 12 } : { bottom: 70 }),
-            zIndex: 12,
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 20,
-            bgcolor: COLORS.primarySurface,
-            color: COLORS.onAccent,
-            pointerEvents: 'none',
-          }}
-        >
-          <Typography sx={{ fontSize: 11, fontWeight: 700 }}>
-            {t('Page')} {activePage + pageTurnHint}…
-          </Typography>
-        </Paper>
-      )}
-      <Box sx={{
-        position: 'absolute',
-        bottom: 20,
-        right: 20,
-        zIndex: 10,
-        backgroundColor: COLORS.bgWhite,
-        backdropFilter: 'blur(8px)',
-        borderRadius: '30px',
-        border: `1px solid ${COLORS.borderLight}`,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        p: '4px'
-      }}>
-        <ButtonGroup variant="text" size="small">
-          {pageCount > 1 && (
-            <>
-              <Tooltip title={t('Previous Page')}>
-                <span>
-                  <IconButton
-                    onClick={() => setActivePage((page) => Math.max(1, page - 1))}
-                    disabled={activePage === 1}
-                    size="small"
-                    sx={{ color: COLORS.textSecondary }}
-                  >
-                    <ArrowLeft size={16} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Box sx={{ px: 1, fontSize: '0.75rem', fontWeight: 'bold', color: COLORS.textPrimary, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                {t('Page')} {activePage}/{pageCount}
-              </Box>
-
-              <Tooltip title={t('Next Page')}>
-                <span>
-                  <IconButton
-                    onClick={() => setActivePage((page) => Math.min(pageCount, page + 1))}
-                    disabled={activePage === pageCount}
-                    size="small"
-                    sx={{ color: COLORS.textSecondary, borderRight: `1px solid ${COLORS.borderLight}` }}
-                  >
-                    <ArrowRight size={16} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </>
-          )}
-
-          <Tooltip title={t('Zoom Out')}>
-            <IconButton onClick={handleZoomOut} size="small" sx={{ color: COLORS.textSecondary }}>
-              <ZoomOut size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Box sx={{ px: 1, fontSize: '0.75rem', fontWeight: 'bold', color: COLORS.textPrimary, minWidth: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {Math.round(scale * 100)}%
-          </Box>
-
-          <Tooltip title={t('Zoom In')}>
-            <IconButton onClick={handleZoomIn} size="small" sx={{ color: COLORS.textSecondary }}>
-              <ZoomIn size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title={zoomMode === 'width' ? t('Fit Entire Page') : t('Fit Width')}>
-            <IconButton
-              onClick={() => setZoomMode(zoomMode === 'width' ? 'page' : 'width')}
-              size="small"
-              sx={{ color: COLORS.textSecondary, borderLeft: `1px solid ${COLORS.borderLight}` }}
-            >
-              {zoomMode === 'width' ? <Minimize size={16} /> : <Maximize size={16} />}
-            </IconButton>
-          </Tooltip>
-        </ButtonGroup>
-      </Box>
-
-      <Box sx={{
-        width: '100%',
-        height: '100%',
-        overflow: 'auto',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        py: 4,
-        boxSizing: 'border-box',
-      }}>
-        <Box
-          onDragStart={startSectionDrag}
-          onDragOver={previewSectionDrag}
-          onDrop={dropSection}
-          onDragEnd={finishSectionDrag}
-          onClick={probeFontStyle}
-          sx={{
-            '& [data-cv-page] > * > *': { zoom: fontScale },
-            '& [data-cv-section] p, & [data-cv-section] li': { cursor: 'text' },
-            '& [data-cv-drag-handle]': { cursor: 'grab', userSelect: 'none' },
-            '& [data-cv-drag-handle]:active': { cursor: 'grabbing' },
-            '& [data-cv-section]': {
-              position: 'relative',
-              transition: 'opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease',
-            },
-            ...(draggedSection ? {
-              [`& [data-cv-section="${draggedSection}"]`]: {
-                opacity: 0.35,
-                transform: 'scale(.985)',
-              },
-            } : {}),
-            ...(dropTarget ? {
-              [`& [data-cv-section="${dropTarget}"]`]: {
-                boxShadow: '0 -4px 0 #2a5c45',
-                '&::before': {
-                  content: `"${t('Drop section here')}"`,
-                  position: 'absolute',
-                  top: '-24px',
-                  left: 0,
-                  zIndex: 4,
-                  px: 1,
-                  py: '2px',
-                  borderRadius: '5px',
-                  bgcolor: COLORS.primarySurface,
-                  color: COLORS.onAccent,
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  letterSpacing: '.02em',
-                  pointerEvents: 'none',
-                },
-              },
-            } : {}),
-            width: DESIGN_WIDTH,
-            height: DESIGN_HEIGHT,
-            transform: `scale(${scale})`,
-            transformOrigin: 'top center',
-            mb: `${(scale - 1) * DESIGN_HEIGHT}px`
-          }}
-        >
-          <Preview activePage={activePage} />
-        </Box>
-      </Box>
-
-      <Popover
-        open={Boolean(fontProbe)}
-        anchorEl={fontProbe?.anchor ?? null}
+      <DragHints
+        pageCount={pageCount}
+        dragging={Boolean(draggedSection)}
+        activePage={activePage}
+        pageTurnHint={pageTurnHint}
+      />
+      <PreviewToolbar
+        pageCount={pageCount}
+        activePage={activePage}
+        scale={scale}
+        zoomMode={zoomMode}
+        onPageChange={setActivePage}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onToggleFit={() => setZoomMode(zoomMode === 'width' ? 'page' : 'width')}
+      />
+      <PreviewCanvas
+        activePage={activePage}
+        scale={scale}
+        fontScale={fontScale}
+        draggedSection={draggedSection}
+        dropTarget={dropTarget}
+        onDragStart={startSectionDrag}
+        onDragOver={previewSectionDrag}
+        onDrop={dropSection}
+        onDragEnd={finishSectionDrag}
+        onClick={probeFontStyle}
+      />
+      <FontProbePopover
+        fontProbe={fontProbe}
+        fontScale={fontScale}
+        pageCount={pageCount}
+        probeSize={probeSize}
+        sizeDraft={sizeDraft}
         onClose={() => setFontProbe(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        slotProps={{ paper: { sx: { p: 1.5, borderRadius: 2, border: `1px solid ${COLORS.borderLight}` } } }}
-      >
-        {fontProbe && (
-          <Box sx={{ minWidth: 230 }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              {fontProbe.family}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 0.5 }}>
-              <IconButton
-                size="small"
-                onClick={() => applyProbeSize(probeSize - FONT_SIZE_STEP)}
-                disabled={fontScale <= FONT_SCALE_MIN}
-                aria-label={t('Smaller text')}
-              >
-                <ZoomOut size={16} />
-              </IconButton>
-              <TextField
-                size="small"
-                value={sizeDraft}
-                onChange={(event) => setSizeDraft(event.target.value)}
-                onBlur={commitSizeDraft}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') commitSizeDraft();
-                }}
-                inputProps={{
-                  inputMode: 'decimal',
-                  'aria-label': t('Font size'),
-                  style: { textAlign: 'center', fontWeight: 700, padding: '6px 4px' },
-                }}
-                InputProps={{ endAdornment: <InputAdornment position="end" sx={{ ml: 0 }}>px</InputAdornment> }}
-                sx={{ flex: 1 }}
-              />
-              <IconButton
-                size="small"
-                onClick={() => applyProbeSize(probeSize + FONT_SIZE_STEP)}
-                disabled={fontScale >= FONT_SCALE_MAX}
-                aria-label={t('Larger text')}
-              >
-                <ZoomIn size={16} />
-              </IconButton>
-            </Box>
-            <Typography sx={{ fontSize: 11, color: COLORS.textSecondary, mt: 1 }}>
-              {(fontProbe.size * FONT_SCALE_MIN).toFixed(1)}–{(fontProbe.size * FONT_SCALE_MAX).toFixed(1)} px · {t('Pages')}: {pageCount}
-            </Typography>
-            <Typography sx={{ fontSize: 11, color: COLORS.textSecondary }}>
-              {t('Applies to the whole CV')} — {Math.round(fontScale * 100)}%
-            </Typography>
-          </Box>
-        )}
-      </Popover>
+        onSizeDraftChange={setSizeDraft}
+        onCommitSize={commitSizeDraft}
+        onApplySize={applyProbeSize}
+      />
     </Box>
   );
 };
