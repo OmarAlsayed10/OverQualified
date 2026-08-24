@@ -48,7 +48,9 @@ const InterviewHistory = ({ sessions, selectedId, onSelect, onNew }: InterviewHi
                 </Typography>
                 <Chip
                   size="small"
-                  label={session.status === "completed" ? t("Complete") : t("In progress")}
+                  label={session.status === "completed"
+                    ? t("Complete")
+                    : session.status === "quit" ? t("Quit") : t("In progress")}
                   color={session.status === "completed" ? "success" : "default"}
                 />
               </Box>

@@ -3,6 +3,7 @@ import { groqChat } from "../../lib/groqChat";
 import {
   createInterviewSession,
   finishInterviewSession,
+  quitInterviewSession,
   submitInterviewAnswer,
 } from "../interviewCoachService";
 
@@ -213,6 +214,32 @@ describe("interviewCoachService", () => {
     if (outcome.kind !== "success") throw new Error("Expected a successful answer.");
     expect(outcome.session).toMatchObject({ status: "completed", remainingSeconds: 0 });
     expect(outcome.session.turns).toHaveLength(1);
+  });
+
+  test("quitting stops a timed interview without calling the coach", async () => {
+    const activeDocument = {
+      ...documentRecord(JSON.stringify({
+        ...storedSession,
+        durationMinutes: 10,
+        remainingSeconds: 600,
+        questionLimit: 5,
+      })),
+      updatedAt: new Date(),
+    };
+    (prisma.document.findFirst as jest.Mock).mockResolvedValue(activeDocument);
+    (prisma.document.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+    (prisma.document.findUniqueOrThrow as jest.Mock).mockResolvedValue({
+      ...activeDocument,
+      content: "updated",
+    });
+
+    const outcome = await quitInterviewSession(userId, sessionId);
+
+    expect(outcome.kind).toBe("success");
+    if (outcome.kind !== "success") throw new Error("Expected a successful quit.");
+    expect(outcome.session).toMatchObject({ status: "quit", currentQuestion: null });
+    expect(outcome.session.remainingSeconds).toBeLessThanOrEqual(600);
+    expect(mockedGroqChat).not.toHaveBeenCalled();
   });
 
   test("finishes early after three completed answers", async () => {

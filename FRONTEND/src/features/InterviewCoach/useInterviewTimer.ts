@@ -8,7 +8,7 @@ export const useInterviewTimer = (session: InterviewSession, paused: boolean) =>
     setRemainingSeconds(session.remainingSeconds);
   }, [session.id, session.remainingSeconds, session.updatedAt]);
 
-  const timerStopped = remainingSeconds === null || remainingSeconds === 0 || session.status === "completed";
+  const timerStopped = remainingSeconds === null || remainingSeconds === 0 || session.status !== "active";
 
   useEffect(() => {
     if (paused || timerStopped) return;

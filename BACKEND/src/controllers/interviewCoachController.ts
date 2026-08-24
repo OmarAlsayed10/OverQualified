@@ -4,6 +4,7 @@ import {
   createInterviewSession,
   finishInterviewSession,
   listInterviewSessions,
+  quitInterviewSession,
   submitInterviewAnswer,
 } from "../services/interviewCoachService";
 import {
@@ -57,6 +58,27 @@ export async function finishInterviewController(req: Request, res: Response, nex
     }
     if (outcome.kind === "no_answers") {
       res.status(400).json({ message: "Answer the current question before finishing." });
+      return;
+    }
+    if (outcome.kind === "conflict") {
+      res.status(409).json({ message: "This interview changed in another request. Reload and try again." });
+      return;
+    }
+    res.status(200).json({ session: outcome.session });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function quitInterviewController(req: Request, res: Response, next: NextFunction) {
+  try {
+    const outcome = await quitInterviewSession(userIdFrom(req), req.params.id);
+    if (outcome.kind === "not_found") {
+      res.status(404).json({ message: "Interview session not found." });
+      return;
+    }
+    if (outcome.kind === "completed") {
+      res.status(409).json({ message: "This interview has already ended." });
       return;
     }
     if (outcome.kind === "conflict") {

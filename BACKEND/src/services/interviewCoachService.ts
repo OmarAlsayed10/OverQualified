@@ -190,7 +190,7 @@ const parseStoredSession = (document: Document): StoredInterviewSession | null =
 };
 
 const remainingAt = (document: Document, session: StoredInterviewSession, now = new Date()) => {
-  if (session.remainingSeconds === null || session.status === "completed") return session.remainingSeconds;
+  if (session.remainingSeconds === null || session.status !== "active") return session.remainingSeconds;
   const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - document.updatedAt.getTime()) / 1000));
   return Math.max(0, session.remainingSeconds - elapsedSeconds);
 };
@@ -409,7 +409,7 @@ export async function submitInterviewAnswer(userId: string, id: string, answer: 
   if (!document) return { kind: "not_found" as const };
   const session = parseStoredSession(document);
   if (!session) return { kind: "not_found" as const };
-  if (session.status === "completed" || !session.currentQuestion) return { kind: "completed" as const };
+  if (session.status !== "active" || !session.currentQuestion) return { kind: "completed" as const };
 
   const remainingSeconds = remainingAt(document, session);
   const finalTurn = session.turns.length + 1 >= session.questionLimit || remainingSeconds === 0;
@@ -438,7 +438,7 @@ export async function finishInterviewSession(userId: string, id: string) {
   if (!document) return { kind: "not_found" as const };
   const session = parseStoredSession(document);
   if (!session) return { kind: "not_found" as const };
-  if (session.status === "completed") return { kind: "completed" as const };
+  if (session.status !== "active") return { kind: "completed" as const };
 
   const remainingSeconds = remainingAt(document, session);
   if (session.turns.length < 3 && remainingSeconds !== 0) return { kind: "too_early" as const };
@@ -451,6 +451,24 @@ export async function finishInterviewSession(userId: string, id: string) {
     currentQuestion: null,
     report,
     remainingSeconds,
+  };
+  const refreshed = await updateSession(document, updatedSession);
+  if (!refreshed) return { kind: "conflict" as const };
+  return { kind: "success" as const, session: publicSession(refreshed, updatedSession) };
+}
+
+export async function quitInterviewSession(userId: string, id: string) {
+  const document = await prisma.document.findFirst({ where: { id, userId, type: SESSION_TYPE } });
+  if (!document) return { kind: "not_found" as const };
+  const session = parseStoredSession(document);
+  if (!session) return { kind: "not_found" as const };
+  if (session.status !== "active") return { kind: "completed" as const };
+
+  const updatedSession: StoredInterviewSession = {
+    ...session,
+    status: "quit",
+    currentQuestion: null,
+    remainingSeconds: remainingAt(document, session),
   };
   const refreshed = await updateSession(document, updatedSession);
   if (!refreshed) return { kind: "conflict" as const };

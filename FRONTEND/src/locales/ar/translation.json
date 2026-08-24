@@ -1349,5 +1349,11 @@
   "Less than one minute remaining.": "تبقت أقل من دقيقة واحدة.",
   "The coach will create your report from the answers completed so far.": "سينشئ المدرب تقريرك من الإجابات المكتملة حتى الآن.",
   "Extracted CV content is saved with the interview session so you can resume it.": "يُحفظ محتوى السيرة المستخرج مع جلسة المقابلة حتى تتمكن من استئنافها.",
-  "Topics not reached": "موضوعات لم تُغطَّ"
+  "Topics not reached": "موضوعات لم تُغطَّ",
+  "Could not quit the interview.": "تعذر إنهاء المقابلة.",
+  "Quit": "تم الانسحاب",
+  "Quit interview": "الانسحاب من المقابلة",
+  "Quit this interview?": "هل تريد الانسحاب من هذه المقابلة؟",
+  "This interview was quit and cannot be resumed.": "تم الانسحاب من هذه المقابلة ولا يمكن استئنافها.",
+  "Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?": "سيتوقف المؤقت ولن تتمكن من استئناف هذه المقابلة. هل أنت متأكد من رغبتك في الانسحاب؟"
 }

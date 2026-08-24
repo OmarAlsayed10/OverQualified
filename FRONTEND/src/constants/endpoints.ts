@@ -64,6 +64,7 @@ export const INTERVIEW_COACH_ENDPOINTS = {
   sessions: `${API_BASE_URL}/interview-coach/sessions`,
   answers: (id: string) => `${API_BASE_URL}/interview-coach/sessions/${id}/answers`,
   finish: (id: string) => `${API_BASE_URL}/interview-coach/sessions/${id}/finish`,
+  quit: (id: string) => `${API_BASE_URL}/interview-coach/sessions/${id}/quit`,
 };
 
 export const QUOTA_ENDPOINTS = {

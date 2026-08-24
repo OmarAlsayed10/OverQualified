@@ -1345,5 +1345,11 @@
   "Less than one minute remaining.": "Less than one minute remaining.",
   "The coach will create your report from the answers completed so far.": "The coach will create your report from the answers completed so far.",
   "Extracted CV content is saved with the interview session so you can resume it.": "Extracted CV content is saved with the interview session so you can resume it.",
-  "Topics not reached": "Topics not reached"
+  "Topics not reached": "Topics not reached",
+  "Could not quit the interview.": "Could not quit the interview.",
+  "Quit": "Quit",
+  "Quit interview": "Quit interview",
+  "Quit this interview?": "Quit this interview?",
+  "This interview was quit and cannot be resumed.": "This interview was quit and cannot be resumed.",
+  "Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?": "Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?"
 }

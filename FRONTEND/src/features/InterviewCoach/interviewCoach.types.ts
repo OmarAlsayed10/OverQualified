@@ -59,7 +59,7 @@ export interface InterviewSession {
   targetRole: string;
   jobDescription: string;
   language: "en" | "ar";
-  status: "active" | "completed";
+  status: "active" | "completed" | "quit";
   currentQuestion: string | null;
   turns: InterviewTurn[];
   report: InterviewReport | null;

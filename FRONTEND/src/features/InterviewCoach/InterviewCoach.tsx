@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { useBlocker } from "react-router-dom";
 import { AI_ENDPOINTS, CV_ENDPOINTS, INTERVIEW_COACH_ENDPOINTS } from "../../constants/endpoints";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useFeedback } from "../../context/FeedbackContext";
 import InterviewHistory from "./InterviewHistory";
 import InterviewReportView from "./InterviewReportView";
@@ -40,6 +42,37 @@ const InterviewCoach = () => {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [quitting, setQuitting] = useState(false);
+  const [quitDestination, setQuitDestination] = useState<"new" | InterviewSession | null>(null);
+  const quitPersisted = useRef(false);
+  const activeInterview = selectedSession?.status === "active";
+  const navigationBlocker = useBlocker(activeInterview);
+
+  useEffect(() => {
+    quitPersisted.current = false;
+  }, [selectedSession?.id]);
+
+  useEffect(() => {
+    if (!activeInterview || !selectedSession) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const stopOnPageHide = () => {
+      if (quitPersisted.current) return;
+      void fetch(INTERVIEW_COACH_ENDPOINTS.quit(selectedSession.id), {
+        method: "POST",
+        credentials: "include",
+        keepalive: true,
+      });
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    window.addEventListener("pagehide", stopOnPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+      window.removeEventListener("pagehide", stopOnPageHide);
+    };
+  }, [activeInterview, selectedSession]);
 
   const selectedCv = useMemo(
     () => setup.source === "saved"
@@ -187,8 +220,43 @@ const InterviewCoach = () => {
   };
 
   const newInterview = () => {
+    if (activeInterview) {
+      setQuitDestination("new");
+      return;
+    }
     setSelectedSession(null);
     setAnswer("");
+  };
+
+  const closeQuitDialog = () => {
+    setQuitDestination(null);
+    if (navigationBlocker.state === "blocked") navigationBlocker.reset();
+  };
+
+  const confirmQuit = async () => {
+    if (!selectedSession) return;
+    setQuitting(true);
+    try {
+      const response = await axios.post(
+        INTERVIEW_COACH_ENDPOINTS.quit(selectedSession.id),
+        {},
+        { withCredentials: true },
+      );
+      const destination = quitDestination;
+      quitPersisted.current = true;
+      setQuitDestination(null);
+      if (navigationBlocker.state === "blocked") {
+        navigationBlocker.proceed();
+      } else {
+        replaceSession(response.data.session);
+        setSelectedSession(destination === "new" ? null : destination);
+        setAnswer("");
+      }
+    } catch (error) {
+      requestError(error, "Could not quit the interview.");
+    } finally {
+      setQuitting(false);
+    }
   };
 
   if (loading) {
@@ -208,7 +276,7 @@ const InterviewCoach = () => {
           </Box>
           {selectedSession && (
             <Button startIcon={<ForumRoundedIcon />} onClick={newInterview} variant="outlined">
-              {t("New interview")}
+              {activeInterview ? t("Quit interview") : t("New interview")}
             </Button>
           )}
         </Box>
@@ -241,10 +309,31 @@ const InterviewCoach = () => {
           <InterviewHistory
             sessions={sessions}
             selectedId={selectedSession?.id ?? null}
-            onSelect={(session) => { setSelectedSession(session); setAnswer(""); }}
+            onSelect={(session) => {
+              if (session.status === "quit") {
+                notify(t("This interview was quit and cannot be resumed."));
+                return;
+              }
+              if (activeInterview && session.id !== selectedSession?.id) {
+                setQuitDestination(session);
+                return;
+              }
+              setSelectedSession(session);
+              setAnswer("");
+            }}
             onNew={newInterview}
           />
         </Box>
+        <ConfirmDialog
+          open={quitDestination !== null || navigationBlocker.state === "blocked"}
+          title={t("Quit this interview?")}
+          message={t("Your timer will stop and this interview cannot be resumed. Are you sure you want to quit?")}
+          confirmLabel={t("Quit interview")}
+          cancelLabel={t("Continue interview")}
+          loading={quitting}
+          onConfirm={confirmQuit}
+          onClose={closeQuitDialog}
+        />
       </Container>
     </Box>
   );

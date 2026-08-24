@@ -3,6 +3,7 @@ import {
   answerInterviewController,
   finishInterviewController,
   listInterviewsController,
+  quitInterviewController,
   startInterviewController,
 } from "../controllers/interviewCoachController";
 import { requireCredits, withUserContext } from "../middleware/creditMiddleware";
@@ -15,5 +16,6 @@ router.get("/sessions", listInterviewsController);
 router.post("/sessions", requireCredits, withUserContext, startInterviewController);
 router.post("/sessions/:id/answers", requireCredits, withUserContext, answerInterviewController);
 router.post("/sessions/:id/finish", requireCredits, withUserContext, finishInterviewController);
+router.post("/sessions/:id/quit", quitInterviewController);
 
 export default router;

@@ -88,7 +88,7 @@ export const storedInterviewSessionSchema = z.object({
   targetRole: cappedText(150),
   jobDescription: z.string().max(12000),
   language: z.enum(["en", "ar"]),
-  status: z.enum(["active", "completed"]),
+  status: z.enum(["active", "completed", "quit"]),
   currentQuestion: cappedText(1200).nullable(),
   turns: z.array(interviewTurnSchema).max(15),
   report: z.union([interviewReportSchema, legacyInterviewReportSchema]).nullable(),
