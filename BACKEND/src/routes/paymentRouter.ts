@@ -10,7 +10,7 @@ import {
   adminListPendingController,
   adminApproveController,
   adminRejectController,
-} from "../controllers/paymentController";
+} from "../controllers/payment";
 import { authenticateToken } from "../middleware/validateJWTMiddleware";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { paymentLimiter } from "../middleware/rateLimitMiddleware";
