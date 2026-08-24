@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { adjustCV } from "../services/cvAdjustService";
-import { scoreCVWithBreakdown } from "../services/cvScoring";
-import { sendAiError } from "../lib/aiError";
+import { adjustCV } from "../../services/cvAdjustService";
+import { scoreCVWithBreakdown } from "../../services/cvScoring";
+import { sendAiError } from "../../lib/aiError";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

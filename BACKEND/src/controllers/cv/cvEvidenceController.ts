@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { analyzeRepo, evidenceSourceText } from "../services/repoAnalysisService";
-import { auditCV } from "../services/claimAuditService";
-import { proposePositioning } from "../services/positioningService";
-import { GitHostError } from "../lib/gitHostError";
-import { hostFromUrl, resolveToken } from "../services/gitHostCredentialService";
-import { CustomRequest } from "../middleware/validateJWTMiddleware";
-import { normalizeLanguage } from "../lib/aiLanguage";
-import { sendAiError } from "../lib/aiError";
+import { analyzeRepo, evidenceSourceText } from "../../services/repoAnalysisService";
+import { auditCV } from "../../services/claimAuditService";
+import { proposePositioning } from "../../services/positioningService";
+import { GitHostError } from "../../lib/gitHostError";
+import { hostFromUrl, resolveToken } from "../../services/gitHostCredentialService";
+import { CustomRequest } from "../../middleware/validateJWTMiddleware";
+import { normalizeLanguage } from "../../lib/aiLanguage";
+import { sendAiError } from "../../lib/aiError";
 
 export const analyzeRepoController = async (req: Request, res: Response): Promise<void> => {
   const { repoUrl, authorIdentities } = req.body;

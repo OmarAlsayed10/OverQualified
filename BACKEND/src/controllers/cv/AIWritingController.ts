@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { generateAIContent } from "../services/AIWritingService";
+import { generateAIContent } from "../../services/AIWritingService";
 
 export const aiWritingAssist = async (
   req: Request,

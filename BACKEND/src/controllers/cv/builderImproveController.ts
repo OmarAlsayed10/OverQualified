@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { sendAiError } from "../lib/aiError";
-import { improveBuilderCV } from "../services/builderImproveService";
-import { coerceFormData } from "../services/cvParseService";
+import { sendAiError } from "../../lib/aiError";
+import { improveBuilderCV } from "../../services/builderImproveService";
+import { coerceFormData } from "../../services/cvParseService";
 
 const dimensionsSchema = z.array(z.object({
   name: z.string().min(1).max(100),

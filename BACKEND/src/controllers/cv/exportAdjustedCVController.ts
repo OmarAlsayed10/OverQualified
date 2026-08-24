@@ -1,6 +1,6 @@
 
 import { Request, Response } from "express";
-import { exportAdjustedCVToDocx } from "../services/exportAdjustedCVService";
+import { exportAdjustedCVToDocx } from "../../services/exportAdjustedCVService";
 
 export const exportAdjustedCVController = async (req: Request, res: Response) => {
   const { adjustedCV } = req.body;

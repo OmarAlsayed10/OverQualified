@@ -1,15 +1,28 @@
 import { Router } from "express";
-import { exportCVController } from "../controllers/cvExportController";
+import {
+  adjustCVController,
+  aiWritingAssist,
+  analyzeCVController,
+  analyzeRepoController,
+  auditClaimsController,
+  improveBuilderCVController as builderImproveController,
+  conversationalBuildController,
+  cvChatController,
+  editFieldWithAIController,
+  exportAdjustedCVController,
+  exportCVController,
+  generateSmartSkillsController,
+  GrammarController as grammarController,
+  importCVController,
+  importCvController,
+  interviewAnswersController,
+  optimizeCvLengthController,
+  parseCvController,
+  polishEntryController,
+  positioningController,
+  uploadCvPhotoController,
+} from "../controllers/cv";
 import { uploadToMemory, uploadMdToMemory, uploadAvatar } from "../services/importService";
-import { importCVController } from "../controllers/cvImportController";
-import { analyzeCVController } from "../controllers/cvAnalysisController";
-import { aiWritingAssist } from "../controllers/AIWritingController";
-import { GrammarController } from "../controllers/grammarCheckerController";
-import { adjustCVController } from "../controllers/cvAdjustController";
-import { improveBuilderCVController } from "../controllers/builderImproveController";
-import { exportAdjustedCVController } from "../controllers/exportAdjustedCVController";
-import { cvChatController, interviewAnswersController } from "../controllers/cvChatController";
-import { parseCvController, polishEntryController, conversationalBuildController, importCvController, optimizeCvLengthController, editFieldWithAIController, generateSmartSkillsController, uploadCvPhotoController } from "../controllers/cvBuilderAssistController";
 import { authenticateToken, optionalAuth } from "../middleware/validateJWTMiddleware";
 import { requireProUser } from "../middleware/roleMiddleware";
 import { requireCredits, withUserContext } from "../middleware/creditMiddleware";
@@ -18,8 +31,6 @@ import { careerMatchController, careerMatchLimitsController } from "../controlle
 import { importProjectFromUrlController, importProjectFromFileController } from "../controllers/projectImportController";
 import { validateUrlMiddleware, validateFileMiddleware } from "../middleware/projectImportValidator";
 import { projectImportLimiter } from "../middleware/projectImportLimiter";
-import { analyzeRepoController, auditClaimsController, positioningController } from "../controllers/cvEvidenceController";
-
 import {
   getSkillRoadmapController,
   getSkillTrendsController,
@@ -101,7 +112,7 @@ router.post(
   requireProUser,
   requireCredits,
   withUserContext,
-  GrammarController
+  grammarController
 );
 router.post(
   "/improve-builder-cv",
@@ -110,7 +121,7 @@ router.post(
   requireProUser,
   requireCredits,
   withUserContext,
-  improveBuilderCVController
+  builderImproveController
 );
 router.post(
   "/adjust-cv",

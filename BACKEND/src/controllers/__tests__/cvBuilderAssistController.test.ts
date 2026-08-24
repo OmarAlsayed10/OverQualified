@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { InvalidAiResponseError } from "../../lib/aiResponseValidation";
 import { conversationalBuild } from "../../services/conversationalBuildService";
-import { conversationalBuildController } from "../cvBuilderAssistController";
+import { conversationalBuildController } from "../cv";
 
 jest.mock("../../services/conversationalBuildService", () => ({ conversationalBuild: jest.fn() }));
 jest.mock("../../services/cvParseService", () => ({

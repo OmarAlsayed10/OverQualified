@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import exportWordCV from "../services/exportDocxService";
-import prisma from "../lib/prisma";
-import { CustomRequest } from "../middleware/validateJWTMiddleware";
+import exportWordCV from "../../services/exportDocxService";
+import prisma from "../../lib/prisma";
+import { CustomRequest } from "../../middleware/validateJWTMiddleware";
 
 
 type CVData = {

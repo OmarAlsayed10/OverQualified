@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { renderCvPdf } from "../services/pdfExportService";
+import { renderCvPdf } from "../../services/pdfExportService";
 
 const safeFileName = (name: unknown) =>
   String(name ?? "")

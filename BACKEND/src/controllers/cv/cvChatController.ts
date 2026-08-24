@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { cvChat, getInterviewAnswers } from "../services/cvChatService";
-import { sendAiError } from "../lib/aiError";
-import { normalizeLanguage } from "../lib/aiLanguage";
+import { cvChat, getInterviewAnswers } from "../../services/cvChatService";
+import { sendAiError } from "../../lib/aiError";
+import { normalizeLanguage } from "../../lib/aiLanguage";
 
 export const cvChatController = async (req: Request, res: Response) => {
   const { cvText, question } = req.body;

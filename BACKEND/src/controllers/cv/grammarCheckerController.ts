@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { grammarCheck } from "../services/grammarService";
+import { grammarCheck } from "../../services/grammarService";
 
 export const GrammarController = async(req:Request,res:Response)=>{
 

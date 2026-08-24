@@ -7,8 +7,8 @@ import {
   removeCV,
   makePrimaryCV,
   getPrimary,
-} from "../controllers/cvBuilderController";
-import { exportCvPdfController } from "../controllers/cvPdfExportController";
+  exportCvPdfController,
+} from "../controllers/cv";
 import { authenticateToken } from "../middleware/validateJWTMiddleware";
 
 const router = Router();

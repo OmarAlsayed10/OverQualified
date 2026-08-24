@@ -1,18 +1,18 @@
 import { Request, Response } from "express";
-import { CustomRequest } from "../middleware/validateJWTMiddleware";
-import { estimateTextPageCount, extractText } from "../services/extractTextService";
-import { extractionQuality, pdfOrigin } from "../services/extractionQuality";
-import { aiResponse, hasAiResponse } from "../services/aiService";
-import { scoreCVWithBreakdown, hasScore } from "../services/cvScoring";
-import { canSpend, canAnonAnalyze, consumeAnonAnalyze } from "../services/quotaService";
-import { runWithUser } from "../lib/creditContext";
-import { isGroqRateLimit } from "../lib/groqChat";
-import prisma from "../lib/prisma";
-import { InvalidAiResponseError } from "../lib/aiResponseValidation";
-import { normalizeLanguage } from "../lib/aiLanguage";
-import { renderedCvAnalysisArtifact, savedCvAnalysisArtifact } from "../services/savedCvAnalysisService";
-import { hasPaidAccess } from "../services/entitlementService";
-import { coerceFormData } from "../services/cvParseService";
+import { CustomRequest } from "../../middleware/validateJWTMiddleware";
+import { estimateTextPageCount, extractText } from "../../services/extractTextService";
+import { extractionQuality, pdfOrigin } from "../../services/extractionQuality";
+import { aiResponse, hasAiResponse } from "../../services/aiService";
+import { scoreCVWithBreakdown, hasScore } from "../../services/cvScoring";
+import { canSpend, canAnonAnalyze, consumeAnonAnalyze } from "../../services/quotaService";
+import { runWithUser } from "../../lib/creditContext";
+import { isGroqRateLimit } from "../../lib/groqChat";
+import prisma from "../../lib/prisma";
+import { InvalidAiResponseError } from "../../lib/aiResponseValidation";
+import { normalizeLanguage } from "../../lib/aiLanguage";
+import { renderedCvAnalysisArtifact, savedCvAnalysisArtifact } from "../../services/savedCvAnalysisService";
+import { hasPaidAccess } from "../../services/entitlementService";
+import { coerceFormData } from "../../services/cvParseService";
 
 export const analyzeCVController = async (req: Request, res: Response) => {
   const file = req.file as Express.Multer.File | undefined;
