@@ -15,7 +15,7 @@ import {
   unbanIpController,
   listAllPaymentsController,
   aiStatusController,
-} from "../controllers/adminController";
+} from "../controllers/admin";
 import {
   adminListBlogsController,
   createBlogController,
