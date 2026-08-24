@@ -60,7 +60,7 @@ export const createDocument = (data: {
 
 export const listDocuments = (userId: string, type?: DocumentType) =>
   prisma.document.findMany({
-    where: { userId, ...(type ? { type } : {}) },
+    where: { userId, type: type ?? { in: [...DOCUMENT_TYPES] } },
     orderBy: { updatedAt: "desc" },
   });
 

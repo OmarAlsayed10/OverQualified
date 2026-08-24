@@ -23,6 +23,7 @@ import blogRouter from "./routes/blogRouter";
 import quotaRouter from "./routes/quotaRouter";
 import reviewRouter from "./routes/reviewRouter";
 import communityRouter from "./routes/communityRouter";
+import interviewCoachRouter from "./routes/interviewCoachRouter";
 import { generalLimiter, aiLimiter } from "./middleware/rateLimitMiddleware";
 import { isGroqRateLimit } from "./lib/groqChat";
 import { blockBannedIp } from "./middleware/ipBanMiddleware";
@@ -85,6 +86,7 @@ app.use("/blogs", blogRouter);
 app.use("/quota", quotaRouter);
 app.use("/reviews", reviewRouter);
 app.use("/community", communityRouter);
+app.use("/interview-coach", aiLimiter, interviewCoachRouter);
 
 // Global Error Handler Middleware
 app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {

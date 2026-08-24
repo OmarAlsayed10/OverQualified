@@ -41,6 +41,7 @@ function Navbar() {
   const productPages = [
     { label: t('CV Builder'), href: '/getStart' },
     { label: t('Career Match'), href: '/career-match' },
+    { label: t('Interview Coach'), href: '/interview-coach' },
     { label: t('Roadmap'), href: '/roadmap' },
   ];
 

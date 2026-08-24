@@ -36,6 +36,7 @@ const CVAnalysisPage = lazy(() => import("./pages/CVAnalysisPage"));
 const JobRadarPage = lazy(() => import("./pages/JobRadarPage"));
 const ApplicationWorkspacePage = lazy(() => import("./pages/ApplicationWorkspacePage"));
 const CareerMatchPage = lazy(() => import("./pages/CareerMatchPage"));
+const InterviewCoach = lazy(() => import("./features/InterviewCoach"));
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage"));
 const ChatBot = lazy(() => import("./features/chatBot/ChatBot"));
 const ProPaymentForm = lazy(() => import("./features/payment/Payment"));
@@ -157,6 +158,14 @@ const appRoutes = [
         element: (
           <ProtectedRoute>
             <JobRadarPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "interview-coach",
+        element: (
+          <ProtectedRoute>
+            <InterviewCoach />
           </ProtectedRoute>
         ),
       },

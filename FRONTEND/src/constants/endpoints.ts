@@ -60,6 +60,12 @@ export const DOCUMENT_ENDPOINTS = {
   delete: (id: string) => `${API_BASE_URL}/documents/${id}`,
   setPrimary: (id: string) => `${API_BASE_URL}/documents/${id}/primary`,
 };
+export const INTERVIEW_COACH_ENDPOINTS = {
+  sessions: `${API_BASE_URL}/interview-coach/sessions`,
+  answers: (id: string) => `${API_BASE_URL}/interview-coach/sessions/${id}/answers`,
+  finish: (id: string) => `${API_BASE_URL}/interview-coach/sessions/${id}/finish`,
+};
+
 export const QUOTA_ENDPOINTS = {
   status: `${API_BASE_URL}/quota/status`,
 };
