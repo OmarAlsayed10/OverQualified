@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OverQualified</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>OverQualified</h1>
+      <button id="disconnect" class="link" hidden>Disconnect</button>
+    </header>
+
+    <section id="connect">
+      <p class="muted">Connect the extension to your OverQualified account to save jobs and prepare answers.</p>
+      <label for="api-base">API address</label>
+      <input id="api-base" type="url" placeholder="http://localhost:3001" />
+      <button id="start-pairing">Connect account</button>
+      <p id="pairing-hint" class="muted" hidden>
+        Approve the code <code id="pairing-code"></code> in the tab that just opened, then come back here.
+      </p>
+    </section>
+
+    <section id="workspace" hidden>
+      <p class="muted" id="account"></p>
+
+      <div id="job" hidden>
+        <h2 id="job-title"></h2>
+        <p class="muted"><span id="job-company"></span> &middot; <span id="job-location"></span></p>
+        <p class="badge" id="job-via"></p>
+      </div>
+
+      <div id="cv-block" hidden>
+        <label for="cv-select">CV for this job</label>
+        <select id="cv-select"></select>
+        <button id="download-cv" class="secondary">Download CV</button>
+      </div>
+
+      <button id="prepare" hidden>Prepare answers</button>
+      <p id="prepare-hint" class="muted" hidden>
+        Watching the application form. Open Apply and the questions will appear here.
+      </p>
+
+      <div id="answers-block" hidden>
+        <h3>Answers (<span id="answer-count">0</span>)</h3>
+        <ul id="answers"></ul>
+      </div>
+
+      <p id="status" class="muted" role="status"></p>
+    </section>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

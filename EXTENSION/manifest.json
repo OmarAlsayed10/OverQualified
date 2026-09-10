@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "OverQualified Job Radar",
+  "version": "0.1.0",
+  "description": "Capture jobs you browse into your OverQualified radar and see which CV fits best.",
+  "permissions": ["storage", "sidePanel", "activeTab", "scripting", "downloads"],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.wuzzuf.net/*",
+    "https://*.bayt.com/*",
+    "https://*.indeed.com/*",
+    "http://localhost:3001/*"
+  ],
+  "background": { "service_worker": "src/background.js" },
+  "side_panel": { "default_path": "src/sidepanel.html" },
+  "action": { "default_title": "Open OverQualified" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/jobs/*",
+        "https://*.wuzzuf.net/jobs/*",
+        "https://*.bayt.com/*",
+        "https://*.indeed.com/*"
+      ],
+      "js": ["src/detector.js", "src/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
