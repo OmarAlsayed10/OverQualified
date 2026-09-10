@@ -9,8 +9,14 @@ import { roadmapPalette } from '../features/Roadmap/roadmapTheme';
 import { normalizeSkillKey } from '../features/Roadmap/skillKey';
 import { UserRoadmap } from '../features/Roadmap/UserRoadmap';
 import { ROADMAP_ENDPOINTS } from '../constants/endpoints';
+import { useAuth } from '../hooks/useAuth';
+import { useFeedback } from '../context/FeedbackContext';
+import { hasSubscriptionAccess } from '../utils/proAccess';
 
 export default function RoadmapPage() {
+  const { user } = useAuth();
+  const { showEntitlement } = useFeedback();
+  const detailed = hasSubscriptionAccess(user);
   const [items, setItems] = useState<UserProgressItem[]>([]);
   const [trends, setTrends] = useState<SkillRoadmapDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +102,7 @@ export default function RoadmapPage() {
     <Box sx={{ minHeight: '100vh', bgcolor: roadmapPalette.sand, pb: 10 }}>
       <RoadmapHero />
       <Container maxWidth="lg" sx={{ mt: -6, position: 'relative' }}>
-        <MarketTrends trends={trends} progress={dedupedItems} onToggleStatus={(item) => void toggleStatus(item)} />
+        <MarketTrends trends={trends} progress={dedupedItems} detailed={detailed} onToggleStatus={(item) => void toggleStatus(item)} />
         <UserRoadmap
           items={filteredItems}
           totalCount={dedupedItems.length}
@@ -105,6 +111,8 @@ export default function RoadmapPage() {
           loading={loading}
           filter={filter}
           deletingSkill={deletingSkill}
+          detailed={detailed}
+          onUnlockDetails={() => showEntitlement('SUBSCRIPTION_REQUIRED')}
           onFilterChange={setFilter}
           onToggleStatus={(item) => void toggleStatus(item)}
           onDelete={(item) => void deleteSkill(item)}

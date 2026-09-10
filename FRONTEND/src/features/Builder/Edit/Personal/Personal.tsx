@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateSection } from '../../../../redux/store/slices/cvBuilderSlice';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { personalSchema } from '../../cvRequirements';
 import FormInput from '../../../../components/ui/FormInput';
 import AIEditInput from '../../components/AIEditInput/AIEditInput';
 import PhotoCropDialog from '../../components/PhotoCropDialog/PhotoCropDialog';
@@ -27,22 +27,6 @@ import type { RootState } from '../../../../redux/store/store';
 import type { PersonalFormData } from './Personal.types';
 import { COLORS } from '../../../../theme/tokens';
 
-const personalSchema = z.object({
-  firstName: z.string().min(1, 'First Name is required').regex(/^[؀-ۿa-zA-Z\s]*$/, 'Letters only'),
-  lastName: z.string().min(1, 'Last Name is required').regex(/^[؀-ۿa-zA-Z\s]*$/, 'Letters only'),
-  professionalTitle: z.string().min(1, 'Professional Title is required'),
-  email: z.string().min(1, 'Email is required').email('Invalid email format'),
-  phoneCode: z.string().min(1, 'Country code is required'),
-  phone: z.string().min(7, 'Phone number too short').max(15, 'Phone number too long').regex(/^[0-9]+$/, 'Digits only'),
-  country: z.string().optional(),
-  city: z.string().min(1, 'City is required'),
-  town: z.string().optional(),
-  ProfessionalSummary: z.string().optional(),
-  linkedin: z.string().optional(),
-  github: z.string().optional(),
-  portfolio: z.string().optional(),
-  photo: z.string().optional(),
-});
 
 const Personal = () => {
   const { t } = useTranslation();
@@ -62,7 +46,7 @@ const Personal = () => {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
 
-  const { control, watch, setValue } = useForm<PersonalFormData>({
+  const { control, watch, setValue, trigger } = useForm<PersonalFormData>({
     resolver: zodResolver(personalSchema),
     defaultValues: personalInfo,
     mode: 'onChange',
@@ -71,6 +55,13 @@ const Personal = () => {
   const summaryUndo = useFieldUndo<string>('personalInfo.ProfessionalSummary', (v) =>
     setValue('ProfessionalSummary', v, { shouldDirty: true }),
   );
+
+  // The AI writes only the facts the user gave, so an entry it created can land with required
+  // fields empty. Validate once on mount so those fields show their error instead of failing
+  // silently; a brand-new empty section stays quiet.
+  useEffect(() => {
+    if (Object.values(personalInfo).some(Boolean)) void trigger();
+  }, []);
 
   useEffect(() => {
     const subscription = watch((value) => {

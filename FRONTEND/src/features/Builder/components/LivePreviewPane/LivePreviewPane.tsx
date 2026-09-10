@@ -7,6 +7,7 @@ import {
   moveCvSection,
   setFontScale,
   setPageCount,
+  setSectionGap,
 } from '../../../../redux/store/slices/cvBuilderSlice';
 import type { CvSection } from '../../../../redux/store/slices/cvBuilderSlice';
 import { useTemplate } from '../../../../hooks/useTemplate';
@@ -34,6 +35,7 @@ export const LivePreviewPane = () => {
   const formData = useSelector((state: RootState) => state.cvBuilder.formData);
   const pageCount = useSelector((state: RootState) => state.cvBuilder.pageCount);
   const fontScale = useSelector((state: RootState) => state.cvBuilder.fontScale);
+  const sectionGap = useSelector((state: RootState) => state.cvBuilder.sectionGap);
   const { choosenTemp } = useTemplate();
   const outerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.7);
@@ -90,11 +92,11 @@ export const LivePreviewPane = () => {
     if (pageTurnRef.current.timer !== null) window.clearTimeout(pageTurnRef.current.timer);
   }, []);
 
-  // Recount from scratch whenever the CV content, template or font size changes.
+  // Recount from scratch whenever the CV content, template, font size or section spacing changes.
   useEffect(() => {
     contentChangedRef.current = true;
     latchedPageCountRef.current = 1;
-  }, [formData, choosenTemp, sectionOrder, fontScale]);
+  }, [formData, choosenTemp, sectionOrder, fontScale, sectionGap]);
 
   // The real page count is what the chosen template actually renders, not the page
   // count of whatever file the CV was imported from.
@@ -123,7 +125,7 @@ export const LivePreviewPane = () => {
     measure(allowShrink);
     void document.fonts?.ready.then(() => measure(allowShrink));
     return () => observer.disconnect();
-  }, [formData, choosenTemp, sectionOrder, fontScale, pageCount, dispatch]);
+  }, [formData, choosenTemp, sectionOrder, fontScale, sectionGap, pageCount, dispatch]);
 
   const handleZoomIn = () => {
     setZoomMode('custom');
@@ -268,11 +270,14 @@ export const LivePreviewPane = () => {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onToggleFit={() => setZoomMode(zoomMode === 'width' ? 'page' : 'width')}
+        sectionGap={sectionGap}
+        onSectionGapChange={(next) => dispatch(setSectionGap(next))}
       />
       <PreviewCanvas
         activePage={activePage}
         scale={scale}
         fontScale={fontScale}
+        sectionGap={sectionGap}
         draggedSection={draggedSection}
         dropTarget={dropTarget}
         onDragStart={startSectionDrag}

@@ -17,6 +17,7 @@ import { useAuth } from "../hooks/useAuth";
 export type EntitlementReason =
   | "ANON_ANALYSIS_LIMIT"
   | "PRO_REQUIRED"
+  | "SUBSCRIPTION_REQUIRED"
   | "CREDITS_EXHAUSTED";
 export type NotificationSeverity = "success" | "info" | "warning" | "error";
 
@@ -79,6 +80,24 @@ export const FeedbackProvider = ({ children }: { children: React.ReactNode }) =>
         title: "Upgrade to Pro",
         body: "This feature needs an active Pass, Pro, or Ultra plan.",
         primary: { label: "View upgrade options", to: "/payment-check" },
+        secondary: null,
+      };
+    }
+    if (entitlement === "SUBSCRIPTION_REQUIRED") {
+      if (!user) {
+        return {
+          title: "Sign in to unlock this feature",
+          body: "This feature is part of the Pro and Ultra subscriptions.",
+          primary: { label: "Sign in", to: "/login" },
+          secondary: { label: "Create account", to: "/register" },
+        };
+      }
+      return {
+        title: "Subscribers only",
+        body: tier === "pass"
+          ? "Your 7-Day Pass does not include this. Subscribe to Pro or Ultra to unlock it."
+          : "Subscribe to Pro or Ultra to unlock this feature.",
+        primary: { label: "See plans", to: "/payment-check" },
         secondary: null,
       };
     }

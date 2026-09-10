@@ -1,4 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { sectionGap } from './sectionGap';
+import { educationPeriod } from '../utils/educationPeriod';
 import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
@@ -60,7 +62,7 @@ const ModernCV = ({
 
         {hasSkills && (
           <Box data-cv-section="skills" sx={{ order: sectionOrder.indexOf('skills') }}>
-            <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Skills')}</Typography>
+            <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: sectionGap(30), marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Skills')}</Typography>
             <SkillCategoryList
               categories={skillCategories}
               skills={skills}
@@ -70,11 +72,11 @@ const ModernCV = ({
           </Box>
         )}
         <Box data-cv-section="languages" sx={{ order: sectionOrder.indexOf('languages') }}>
-          <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Languages')}</Typography>
+          <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: sectionGap(30), marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Languages')}</Typography>
           <Typography>{languages.map((language: any) => language.name).join(", ")}</Typography>
         </Box>
         <Box data-cv-section="certifications" sx={{ order: sectionOrder.indexOf('certifications') }}>
-          <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: '30px', marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Certifications')}</Typography>
+          <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '18px', marginTop: sectionGap(30), marginBottom: '10px', borderBottom: '1px solid #ffffff', paddingBottom: '5px' }}>{t('Certifications')}</Typography>
           {certifications.map((cert: any, index: number) => (
             <Typography key={index} sx={{ marginBottom: '6px' }}>
               <Box component="span" sx={{ fontWeight: 600 }}>{cert.name}</Box>
@@ -98,12 +100,12 @@ const ModernCV = ({
         display: 'flex',
         flexDirection: 'column',
       }}>
-        <Box data-cv-section="personal" sx={{ marginBottom: '30px', order: sectionOrder.indexOf('personal') }}>
+        <Box data-cv-section="personal" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('personal') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '22px', borderBottom: '2px solid #1e293b', paddingBottom: '5px', marginBottom: '10px' }}>{t('Professional Summary')}</Typography>
           <Typography data-cv-field="personalInfo.ProfessionalSummary"><FormattedText text={summary} /></Typography>
         </Box>
 
-        <Box data-cv-section="experience" sx={{ marginBottom: '30px', order: sectionOrder.indexOf('experience') }}>
+        <Box data-cv-section="experience" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('experience') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '22px', borderBottom: '2px solid #1e293b', paddingBottom: '5px', marginBottom: '10px' }}>{t('Experience')}</Typography>
           {experience.map((exp: any, index: number) => (
             <Box key={index} sx={{ marginBottom: '20px' }}>
@@ -117,13 +119,13 @@ const ModernCV = ({
           ))}
         </Box>
 
-        <Box data-cv-section="education" sx={{ marginBottom: '30px', order: sectionOrder.indexOf('education') }}>
+        <Box data-cv-section="education" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('education') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={{ fontSize: '22px', borderBottom: '2px solid #1e293b', paddingBottom: '5px', marginBottom: '10px' }}>{t('Education')}</Typography>
           {education.map((edu: any, index: number) => (
             <Box key={index} sx={{ marginBottom: '20px' }}>
               <Typography variant="h3" sx={{ fontSize: '16px', fontWeight: 'bold' }}>{edu.degree} - {edu.institution}</Typography>
               <Typography><Box component="strong">{t('Location:')}</Box> {edu.location}</Typography>
-              <Typography><Box component="strong">{t('Years:')}</Box> {edu.startYear} - {edu.endYear}</Typography>
+              <Typography><Box component="strong">{t('Years:')}</Box> {educationPeriod(edu, t, ' - ')}</Typography>
               <BulletList text={edu.description} fieldPath={`education.${index}.description`} />
             </Box>
           ))}

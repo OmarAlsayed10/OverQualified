@@ -5,6 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { BILLING_CYCLES, BillingCycle, PLAN_TIERS } from '../../../constants/pricingData';
 import { PlanCardProps } from './PlanCard.types';
 import planCard from './planCard.tokens';
+import OfferCountdown from './OfferCountdown';
+
+const priceNumber = (price: string) => Number(price.replace(/[^\d.]/g, ''));
+
+export const savedPercent = (original: string, current: string): number => {
+  const was = priceNumber(original);
+  const now = priceNumber(current);
+  if (!was || !now || now >= was) return 0;
+  return Math.round(((was - now) / was) * 100);
+};
 
 const PlanCard = ({
   variant,
@@ -57,7 +67,16 @@ const PlanCard = ({
         <Typography sx={planCard.pricePro}>{priceInfo.monthly}</Typography>
         <Typography sx={planCard.priceUnit}>/{t('mo')}</Typography>
       </Box>
+      {priceInfo.originalMonthly && (
+        <Box sx={planCard.offerRow}>
+          <Typography sx={planCard.priceStruck}>{priceInfo.originalMonthly}</Typography>
+          <Box component="span" sx={planCard.saveBadge}>
+            {t('You save')} {savedPercent(priceInfo.originalMonthly, priceInfo.monthly)}%
+          </Box>
+        </Box>
+      )}
       <Typography sx={planCard.pricePeriod}>{t(priceInfo.total)}</Typography>
+      {priceInfo.originalMonthly && <OfferCountdown />}
 
       <Box sx={planCard.billingToggle}>
         {BILLING_CYCLES.map((cycle) => (

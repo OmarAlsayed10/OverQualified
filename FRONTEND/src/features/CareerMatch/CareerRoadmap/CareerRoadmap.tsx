@@ -157,7 +157,8 @@ const StepCard = ({ step }: { step: RoadmapStep }) => {
             borderRadius: 2,
             px: 2,
             bgcolor: learned ? "transparent" : colors.primary,
-            "&:hover": { bgcolor: learned ? COLORS.bgIconTinted : colors.ink },
+            color: learned ? colors.ink : COLORS.onAccent,
+            "&:hover": { bgcolor: learned ? COLORS.bgIconTinted : COLORS.primarySurfaceDark, color: learned ? colors.ink : COLORS.onAccent },
           }}
         >
           {learned ? t("Mark as In Progress") : t("Mark as Learned / Added to CV")}

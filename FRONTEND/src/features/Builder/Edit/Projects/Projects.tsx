@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateSection } from '../../../../redux/store/slices/cvBuilderSlice';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { projectsSchema, type ProjectsFormData } from '../../cvRequirements';
 import FormInput from '../../../../components/ui/FormInput';
 import AIEditInput from '../../components/AIEditInput/AIEditInput';
 import UndoButton from '../../../../components/ui/UndoButton/UndoButton';
@@ -28,19 +28,6 @@ import { useFieldUndo } from '../../../../hooks/useFieldUndo';
 import type { useTranslation as useTranslationType } from 'react-i18next';
 import { normalizePastedBulletText } from '../../../../templates/bulletLines';
 
-const projectsSchema = z.object({
-  projects: z.array(
-    z.object({
-      name: z.string().min(1, 'Project name is required'),
-      technologies: z.string().optional(),
-      demoUrl: z.string().optional(),
-      githubUrl: z.string().optional(),
-      description: z.string().optional(),
-    }),
-  ),
-});
-
-type ProjectsFormData = z.infer<typeof projectsSchema>;
 
 interface ProjectDescriptionFieldProps {
   control: Control<ProjectsFormData>;
@@ -194,13 +181,20 @@ const Projects = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
 
-  const { control, watch, setValue } = useForm<ProjectsFormData>({
+  const { control, watch, setValue, trigger } = useForm<ProjectsFormData>({
     resolver: zodResolver(projectsSchema),
     defaultValues: { projects: JSON.parse(JSON.stringify(projectsData)) },
     mode: 'onChange',
   });
 
   const { fields, append, remove, move } = useFieldArray({ control, name: 'projects' });
+
+  // The AI writes only the facts the user gave, so an entry it created can land with required
+  // fields empty. Validate once on mount so those fields show their error instead of failing
+  // silently; a brand-new empty section stays quiet.
+  useEffect(() => {
+    if (projectsData.some((entry) => Object.values(entry).some(Boolean))) void trigger();
+  }, []);
 
   useEffect(() => {
     const subscription = watch((value) => {

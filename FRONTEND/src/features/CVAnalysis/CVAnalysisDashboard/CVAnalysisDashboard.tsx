@@ -29,7 +29,7 @@ import CVChatPanel from './components/CVChatPanel';
 import cvAnalysisDashboard from './cvAnalysisDashboard.tokens';
 import { COLORS } from '../../../theme/tokens';
 import type { CVAnalysisDashboardProps } from './CVAnalysisDashboard.types';
-import { hasPaidAccess } from '../../../utils/proAccess';
+import { hasPaidAccess, hasSubscriptionAccess } from '../../../utils/proAccess';
 
 const FREE_QUESTION_LIMIT = 3;
 
@@ -38,6 +38,7 @@ const CVAnalysisDashboard = ({ uploadedFile, cvId, level }: CVAnalysisDashboardP
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const isPro = hasPaidAccess(user);
+  const isSubscribed = hasSubscriptionAccess(user);
   const { notify, showEntitlement } = useFeedback();
   const [chatOpen, setChatOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -75,7 +76,7 @@ const CVAnalysisDashboard = ({ uploadedFile, cvId, level }: CVAnalysisDashboardP
     setReviewDialogOpen(false);
   };
 
-  const visibleQuestions = isPro
+  const visibleQuestions = isSubscribed
     ? (cvAnalyze?.interviewQuestions || [])
     : (cvAnalyze?.interviewQuestions || []).slice(0, FREE_QUESTION_LIMIT);
 
@@ -114,12 +115,12 @@ const CVAnalysisDashboard = ({ uploadedFile, cvId, level }: CVAnalysisDashboardP
     <InterviewQuestionsCard
       visibleQuestions={visibleQuestions}
       hiddenCount={hiddenCount}
-      isPro={isPro}
+      isPro={isSubscribed}
       answers={interviewAnswerProps.answers}
       answersLoading={interviewAnswerProps.loading}
       answersVisible={interviewAnswerProps.visible}
       onGetAnswers={interviewAnswerProps.fetchAnswers}
-      onWantMore={() => navigate('/pricing')}
+      onWantMore={() => showEntitlement('SUBSCRIPTION_REQUIRED')}
     />
   );
 

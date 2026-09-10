@@ -9,13 +9,17 @@ import { WorkspaceHeader } from '../features/JobRadar/ApplicationWorkspace/Works
 import { WorkspaceTabs } from '../features/JobRadar/ApplicationWorkspace/WorkspaceTabs';
 import type {
   ApplicationWorkspaceData,
-  ChecklistItem,
+  ApplicationPreparation,
   ScreeningAnswer,
 } from '../features/JobRadar/ApplicationWorkspace/applicationWorkspace.types';
 import type { CvVariant } from '../features/JobRadar/components/CvVariantResults';
-import { JOB_ENDPOINTS } from '../constants/endpoints';
+import { AI_ENDPOINTS, JOB_ENDPOINTS } from '../constants/endpoints';
 import i18n from '../i18n';
 import { COLORS } from '../theme/tokens';
+import { PreparationProgress } from '../features/JobRadar/ApplicationWorkspace/PreparationProgress';
+import { emptyPreparation, prepareApplication } from '../features/JobRadar/ApplicationWorkspace/applicationPreparation';
+import { ApplicationCvSelector } from '../features/JobRadar/ApplicationWorkspace/ApplicationCvSelector';
+import type { CvOption } from '../utils/cvOptions';
 
 const ApplicationWorkspacePage = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -32,9 +36,15 @@ const ApplicationWorkspacePage = () => {
   const [coverLetter, setCoverLetter] = useState('');
   const [reminderAt, setReminderAt] = useState('');
   const [selectedCvVariant, setSelectedCvVariant] = useState<string | null>(null);
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [screeningAnswers, setScreeningAnswers] = useState<ScreeningAnswer[]>([]);
+  const [preparation, setPreparation] = useState<ApplicationPreparation>(emptyPreparation());
+  const [savedCv, setSavedCv] = useState<CvOption | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedCvName, setUploadedCvName] = useState<string | null>(null);
+  const [uploadedCvText, setUploadedCvText] = useState('');
+  const [parsingCv, setParsingCv] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const workspaceMetadata = useRef<Record<string, unknown>>({});
 
   const fetchWorkspace = useCallback(async () => {
     if (!matchId) return;
@@ -49,8 +59,16 @@ const ApplicationWorkspacePage = () => {
       setCoverLetter(workspace.match.coverLetter || '');
       setReminderAt(workspace.match.reminderAt ? new Date(workspace.match.reminderAt).toISOString().slice(0, 16) : '');
       setSelectedCvVariant(workspace.match.selectedCvVariant || null);
-      setChecklist(workspace.checklist || []);
       setScreeningAnswers(workspace.screeningAnswers || []);
+      workspaceMetadata.current = workspace.match.workspaceData ?? {};
+      const storedPreparation = workspace.match.workspaceData?.preparation ?? emptyPreparation();
+      setPreparation(storedPreparation);
+      if (storedPreparation.cvSource?.type === 'saved' && storedPreparation.cvSource.id) {
+        setSavedCv({ id: storedPreparation.cvSource.id, title: storedPreparation.cvSource.name, text: storedPreparation.cvSource.text, isPrimary: storedPreparation.cvSource.id === workspace.primaryCv?.id, roleSuggestions: [] });
+      } else if (storedPreparation.cvSource?.type === 'upload') {
+        setUploadedCvName(storedPreparation.cvSource.name);
+        setUploadedCvText(storedPreparation.cvSource.text);
+      }
     } catch (requestError: any) {
       setError(requestError.response?.data?.message || t('Failed to load application workspace.'));
     } finally {
@@ -74,7 +92,6 @@ const ApplicationWorkspacePage = () => {
             coverLetter,
             reminderAt: reminderAt || null,
             selectedCvVariant,
-            checklist,
             screeningAnswers,
             ...overrides,
           },
@@ -85,7 +102,7 @@ const ApplicationWorkspacePage = () => {
         console.error('Auto-save error', saveError);
       }
     }, 1000);
-  }, [matchId, status, notes, coverLetter, reminderAt, selectedCvVariant, checklist, screeningAnswers]);
+  }, [matchId, status, notes, coverLetter, reminderAt, selectedCvVariant, screeningAnswers]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -95,12 +112,6 @@ const ApplicationWorkspacePage = () => {
   const handleStatusChange = async (nextStatus: string) => {
     setStatus(nextStatus);
     triggerAutoSave({ status: nextStatus });
-  };
-
-  const handleChecklistToggle = (id: string) => {
-    const updatedChecklist = checklist.map((item) => item.id === id ? { ...item, done: !item.done } : item);
-    setChecklist(updatedChecklist);
-    triggerAutoSave({ checklist: updatedChecklist });
   };
 
   const recordVariantOutcome = async (variantId: string, outcome: 'sent' | 'response') => {
@@ -121,6 +132,73 @@ const ApplicationWorkspacePage = () => {
     }
   };
 
+  const selectSavedCv = (cv: CvOption) => {
+    setSavedCv(cv);
+    setUploadedFile(null);
+    setUploadedCvName(null);
+    setUploadedCvText('');
+    setPreparation(emptyPreparation());
+  };
+
+  const selectUploadedCv = async (file: File) => {
+    setParsingCv(true);
+    try {
+      const form = new FormData();
+      form.append('cv', file);
+      const response = await axios.post(AI_ENDPOINTS.importCv, form, { withCredentials: true });
+      const cvText = typeof response.data.cvText === 'string' ? response.data.cvText : '';
+      if (cvText.trim().length < 100) throw new Error('Unreadable CV');
+      setUploadedFile(file);
+      setUploadedCvName(file.name);
+      setUploadedCvText(cvText);
+      setSavedCv(null);
+      setPreparation(emptyPreparation());
+    } catch {
+      setCopySnack(t('Could not read this CV. Try another PDF or DOCX.'));
+    } finally {
+      setParsingCv(false);
+    }
+  };
+
+  const persistPreparation = useCallback(async (nextPreparation: ApplicationPreparation) => {
+    if (!matchId) return;
+    const nextWorkspaceData = { ...workspaceMetadata.current, preparation: nextPreparation };
+    workspaceMetadata.current = nextWorkspaceData;
+    await axios.patch(JOB_ENDPOINTS.workspace(matchId), { workspaceData: nextWorkspaceData }, { withCredentials: true });
+  }, [matchId]);
+
+  const runPreparation = useCallback(async (restart = false) => {
+    const cvText = savedCv?.text || uploadedCvText;
+    const cvName = savedCv?.title || uploadedCvName;
+    if (!matchId || !workspaceData || !cvText || !cvName) return;
+    try {
+      await prepareApplication({
+        matchId,
+        cvId: savedCv?.id,
+        cvFile: uploadedFile ?? undefined,
+        cvName,
+        cvText,
+        jobTitle: workspaceData.match.title,
+        jobDescription: workspaceData.job.description,
+        language: i18n.language.startsWith('ar') ? 'ar' : 'en',
+        current: preparation,
+        restart,
+        persist: persistPreparation,
+        onChange: setPreparation,
+        onCoverLetter: setCoverLetter,
+        onVariants: (variants) => {
+          setWorkspaceData((current) => current ? { ...current, cvVariants: variants } : current);
+          setSelectedCvVariant(null);
+        },
+        onScreeningAnswers: setScreeningAnswers,
+      });
+    } catch {
+      setCopySnack(t('Could not save application preparation progress.'));
+    } finally {
+      window.dispatchEvent(new Event('quota:refresh'));
+    }
+  }, [matchId, persistPreparation, preparation, savedCv, t, uploadedCvName, uploadedCvText, uploadedFile, workspaceData]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -139,8 +217,9 @@ const ApplicationWorkspacePage = () => {
     );
   }
 
-  const { match, userProfile, primaryCv } = workspaceData;
+  const { match } = workspaceData;
   const cvVariants = workspaceData.cvVariants || [];
+  const cvSelected = Boolean(savedCv || uploadedCvText);
   return (
     <Box sx={{ bgcolor: COLORS.surfaceSubtle, minHeight: '100vh', pb: 10 }}>
       <WorkspaceHeader
@@ -151,16 +230,30 @@ const ApplicationWorkspacePage = () => {
         onStatusChange={(nextStatus) => void handleStatusChange(nextStatus)}
       />
       <Container maxWidth="xl" sx={{ mt: 4 }}>
+        <ApplicationCvSelector
+          savedCv={savedCv}
+          uploadedName={uploadedCvName}
+          parsing={parsingCv}
+          disabled={preparation.status === 'running'}
+          onSavedCv={selectSavedCv}
+          onUpload={(file) => void selectUploadedCv(file)}
+        />
+        <PreparationProgress
+          preparation={preparation}
+          disabled={!cvSelected || parsingCv}
+          onPrepare={() => void runPreparation(preparation.status === 'completed' || preparation.status === 'completed_with_errors')}
+        />
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12 }}>
             <WorkspaceTabs
               activeTab={activeTab}
-              cvText={primaryCv?.text}
+              preparation={preparation}
               coverLetter={coverLetter}
-              userProfile={userProfile}
               variants={cvVariants}
               selectedVariantId={selectedCvVariant}
-              checklist={checklist}
+              screeningAnswers={screeningAnswers}
+              notes={notes}
+              reminderAt={reminderAt}
               onTabChange={setActiveTab}
               onCopy={copyToClipboard}
               onSelectVariant={(variantId) => {
@@ -168,7 +261,14 @@ const ApplicationWorkspacePage = () => {
                 triggerAutoSave({ selectedCvVariant: variantId });
               }}
               onRecordVariant={(variantId, outcome) => void recordVariantOutcome(variantId, outcome)}
-              onToggleChecklist={handleChecklistToggle}
+              onNotesChange={(nextNotes) => {
+                setNotes(nextNotes);
+                triggerAutoSave({ notes: nextNotes });
+              }}
+              onReminderChange={(nextReminder) => {
+                setReminderAt(nextReminder);
+                triggerAutoSave({ reminderAt: nextReminder || null });
+              }}
             />
           </Grid>
         </Grid>

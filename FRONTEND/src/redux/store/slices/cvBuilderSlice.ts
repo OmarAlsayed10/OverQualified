@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { builderSnapshotFrom, reapplyBuilderSnapshot, restoreBuilderSnapshot } from "./builderHistoryActions";
+import type { EducationStatus } from "../../../utils/educationPeriod";
 
 export interface PersonalInfo {
   firstName: string;
@@ -28,6 +29,7 @@ export interface ExperienceItem {
 }
 
 export interface EducationItem {
+  status?: EducationStatus;
   institution: string;
   degree: string;
   location: string;
@@ -98,6 +100,7 @@ export interface CvBuilderState {
   myCvs: any[];
   pageCount: number;
   fontScale: number;
+  sectionGap: number;
   sectionOrder: CvSection[];
 }
 
@@ -250,6 +253,7 @@ export const cvBuilderInitialState: CvBuilderState = {
   myCvs: [],
   pageCount: 1,
   fontScale: 1,
+  sectionGap: 1,
   sectionOrder: ["personal", "projects", "experience", "education", "skills", "languages", "certifications"],
 };
 
@@ -286,6 +290,7 @@ export const hydrateBuilderDraft = (raw: string | null): CvBuilderState | undefi
       title: typeof draft.title === "string" ? draft.title : "",
       template: typeof draft.template === "string" && draft.template ? draft.template : DEFAULT_TEMPLATE,
       fontScale: clampFontScale(Number(draft.fontScale)),
+      sectionGap: clampSectionGap(Number(draft.sectionGap)),
       sectionOrder: sanitizeSectionOrder(draft.sectionOrder, draftForm.customSections),
     };
   } catch {
@@ -295,6 +300,14 @@ export const hydrateBuilderDraft = (raw: string | null): CvBuilderState | undefi
 
 // Reducers index formData by a dynamic `section` key; cast to a loose record for that.
 type LooseForm = Record<string, any>;
+
+export const SECTION_GAP_MIN = 0.4;
+export const SECTION_GAP_MAX = 2;
+
+// Scales the spacing every template puts between its sections. Untrusted like fontScale, so a
+// stored NaN or an out-of-range number falls back to the template's own design.
+const clampSectionGap = (value: number): number =>
+  Number.isFinite(value) ? Math.min(SECTION_GAP_MAX, Math.max(SECTION_GAP_MIN, Math.round(value * 100) / 100)) : 1;
 
 export const FONT_SCALE_MIN = 0.7;
 export const FONT_SCALE_MAX = 1.2;
@@ -317,6 +330,7 @@ export const cvBuilderSlice = createSlice({
       state.title = typeof cv.title === "string" ? cv.title : "";
       state.template = typeof cv.template === "string" && cv.template ? cv.template : DEFAULT_TEMPLATE;
       state.fontScale = clampFontScale(Number(cv.fontScale));
+      state.sectionGap = clampSectionGap(Number(cv.sectionGap));
       state.sectionOrder = sanitizeSectionOrder(cv.sectionOrder, state.formData.customSections);
     },
     resetCv: (state) => {
@@ -325,6 +339,7 @@ export const cvBuilderSlice = createSlice({
       state.title = "";
       state.template = DEFAULT_TEMPLATE;
       state.fontScale = 1;
+      state.sectionGap = 1;
       state.sectionOrder = cvBuilderInitialState.sectionOrder;
     },
     setCurrentCvId: (state, action: PayloadAction<string | null>) => {
@@ -341,6 +356,9 @@ export const cvBuilderSlice = createSlice({
     },
     setFontScale: (state, action: PayloadAction<number>) => {
       state.fontScale = clampFontScale(action.payload);
+    },
+    setSectionGap: (state, action: PayloadAction<number>) => {
+      state.sectionGap = clampSectionGap(action.payload);
     },
     addCustomSection: (state, action: PayloadAction<string>) => {
       const id = createSectionId();
@@ -441,6 +459,7 @@ export const {
   setTemplate,
   setPageCount,
   setFontScale,
+  setSectionGap,
   addCustomSection,
   renameCustomSection,
   setCustomSectionItems,

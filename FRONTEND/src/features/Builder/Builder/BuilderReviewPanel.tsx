@@ -21,6 +21,7 @@ interface BuilderReviewPanelProps {
   sectionOrder: CvSection[];
   template: string;
   fontScale: number;
+  sectionGap: number;
   onApply: (formData: BuilderFormData) => void;
 }
 
@@ -29,7 +30,7 @@ interface ImprovementProposal {
   changes: { section: string; what: string; why: string; before: string; after: string }[];
 }
 
-const BuilderReviewPanel = ({ formData, sectionOrder, template, fontScale, onApply }: BuilderReviewPanelProps) => {
+const BuilderReviewPanel = ({ formData, sectionOrder, template, fontScale, sectionGap, onApply }: BuilderReviewPanelProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<any>();
   const { user } = useAuth();
@@ -48,11 +49,11 @@ const BuilderReviewPanel = ({ formData, sectionOrder, template, fontScale, onApp
     setApplied(false);
     setFixError('');
     const action = await dispatch(cvAnalyzeAction({
-      builderCv: { formData, sectionOrder, template, fontScale },
+      builderCv: { formData, sectionOrder, template, fontScale, sectionGap },
       language: requestLanguage(),
     }));
     if (cvAnalyzeAction.fulfilled.match(action)) track('builder_analysis_run');
-  }, [dispatch, fontScale, formData, sectionOrder, template]);
+  }, [dispatch, fontScale, sectionGap, formData, sectionOrder, template]);
 
   const generateFixes = async () => {
     if (!analysis) return;

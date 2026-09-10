@@ -6,6 +6,8 @@ import {
   Step,
   StepLabel,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,6 +36,8 @@ interface PaymentProps {
 const Payment = ({ purchaseMode = "plan" }: PaymentProps) => {
   const { t } = useTranslation();
   const { notify } = useFeedback();
+  const theme = useTheme();
+  const mobile = useMediaQuery(theme.breakpoints.down("sm"));
   const {
     step,
     plans,
@@ -81,7 +85,7 @@ const Payment = ({ purchaseMode = "plan" }: PaymentProps) => {
           }}
         >
           {/* Header */}
-          <Box sx={{ p: 4, pb: 0 }}>
+          <Box sx={{ p: { xs: 2.5, sm: 4 }, pb: 0 }}>
             <Typography
               variant="h5"
               sx={{
@@ -92,7 +96,7 @@ const Payment = ({ purchaseMode = "plan" }: PaymentProps) => {
             >
               {t(isCreditPurchase ? 'Buy credits' : 'Choose a plan')}
             </Typography>
-            <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+            <Stepper activeStep={activeStep} orientation={mobile ? "vertical" : "horizontal"} sx={{ mb: 3 }}>
               {steps.map((label) => (
                 <Step key={label}>
                   <StepLabel
@@ -110,7 +114,7 @@ const Payment = ({ purchaseMode = "plan" }: PaymentProps) => {
           </Box>
 
           {/* Body */}
-          <Box sx={{ p: 4 }}>
+          <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
             {step === "select-plan" && (
               isCreditPurchase ? (
                 <CreditPurchaseCards

@@ -1,4 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { sectionGap } from './sectionGap';
+import { educationPeriod } from '../utils/educationPeriod';
 import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
@@ -21,7 +23,7 @@ const HEADING = {
   color: "#000",
   borderBottom: "1px solid #000",
   pb: 0.2,
-  mt: 2,
+  mt: sectionGap(16),
   mb: 0.8,
 };
 
@@ -107,7 +109,7 @@ const HarvardCV = ({
                 left={edu.institution}
                 right={edu.location}
                 subLeft={edu.degree}
-                subRight={[edu.startYear, edu.endYear].filter(Boolean).join(" – ")}
+                subRight={educationPeriod(edu, t)}
               />
               <Bullets text={edu.description} fieldPath={`education.${i}.description`} />
             </Box>

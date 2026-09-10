@@ -1,7 +1,7 @@
 import { createAction } from "@reduxjs/toolkit";
 import type { CvBuilderState } from "./cvBuilderSlice";
 
-export type BuilderSnapshot = Pick<CvBuilderState, "formData" | "template" | "fontScale" | "sectionOrder">;
+export type BuilderSnapshot = Pick<CvBuilderState, "formData" | "template" | "fontScale" | "sectionGap" | "sectionOrder">;
 
 export interface BuilderHistoryTransition {
   nextBuilder: BuilderSnapshot;
@@ -12,6 +12,7 @@ export const builderSnapshotFrom = (builder: CvBuilderState | BuilderSnapshot): 
   formData: builder.formData,
   template: builder.template,
   fontScale: builder.fontScale,
+  sectionGap: builder.sectionGap,
   sectionOrder: builder.sectionOrder,
 });
 

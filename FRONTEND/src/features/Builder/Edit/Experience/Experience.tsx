@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateSection } from '../../../../redux/store/slices/cvBuilderSlice';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { experienceSchema } from '../../cvRequirements';
 import FormInput from '../../../../components/ui/FormInput';
 import AIEditInput from '../../components/AIEditInput/AIEditInput';
 import { ClaimAuditPanel } from '../ClaimAuditPanel';
@@ -115,18 +115,6 @@ const ExperienceDescriptionField = ({
   );
 };
 
-const experienceSchema = z.object({
-  experience: z.array(
-    z.object({
-      jobTitle: z.string().min(1, 'Job Title is required'),
-      company: z.string().min(1, 'Company is required'),
-      location: z.string().min(1, 'Location is required'),
-      startDate: z.string().min(1, 'Start Date is required'),
-      endDate: z.string().min(1, 'End Date is required'),
-      description: z.string().optional(),
-    }),
-  ),
-});
 
 const Experience = () => {
   const { t } = useTranslation();
@@ -142,13 +130,20 @@ const Experience = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
 
-  const { control, watch, setValue } = useForm<ExperienceFormData>({
+  const { control, watch, setValue, trigger } = useForm<ExperienceFormData>({
     resolver: zodResolver(experienceSchema),
     defaultValues: { experience: JSON.parse(JSON.stringify(experiences)) },
     mode: 'onChange',
   });
 
   const { fields, append, remove, move } = useFieldArray({ control, name: 'experience' });
+
+  // The AI writes only the facts the user gave, so an entry it created can land with required
+  // fields empty. Validate once on mount so those fields show their error instead of failing
+  // silently; a brand-new empty section stays quiet.
+  useEffect(() => {
+    if (experiences.some((entry) => Object.values(entry).some(Boolean))) void trigger();
+  }, []);
 
   useEffect(() => {
     const subscription = watch((value) => {

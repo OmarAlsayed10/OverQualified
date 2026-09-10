@@ -22,7 +22,7 @@ const templates: Record<string, any> = {
 // The export browser injects this before navigating, so the page needs no auth and no fetch.
 declare global {
   interface Window {
-    __CV_DATA__?: { formData: any; sectionOrder?: string[]; template?: string; fontScale?: number };
+    __CV_DATA__?: { formData: any; sectionOrder?: string[]; template?: string; fontScale?: number; sectionGap?: number };
     __CV_PRINT_READY__?: boolean;
   }
 }
@@ -91,7 +91,7 @@ const PrintCV = () => {
     <>
       <GlobalStyles styles={printStyles()} />
       <Box sx={{ width: PAGE_WIDTH, mx: 'auto', background: '#fff' }}>
-        <Box id="cv-print-root" sx={{ zoom: data.fontScale ?? 1 }}>
+        <Box id="cv-print-root" sx={{ zoom: data.fontScale ?? 1, '--cv-section-gap': data.sectionGap ?? 1 }}>
           <Template {...props} />
         </Box>
       </Box>

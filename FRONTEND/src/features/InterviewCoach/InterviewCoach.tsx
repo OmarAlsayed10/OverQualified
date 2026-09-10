@@ -12,7 +12,7 @@ import InterviewReportView from "./InterviewReportView";
 import InterviewSessionView from "./InterviewSessionView";
 import InterviewSetup from "./InterviewSetup";
 import interviewCoach from "./interviewCoach.tokens";
-import { roleSuggestionsFromCv } from "./roleSuggestions";
+import { roleSuggestionsFromCv } from "../../utils/roleSuggestions";
 import {
   InterviewCvData,
   InterviewSession,
@@ -243,26 +243,38 @@ const InterviewCoach = () => {
     if (navigationBlocker.state === "blocked") navigationBlocker.reset();
   };
 
+  // Drop the quit interview locally before doing anything else. Leaving it in place is what
+  // used to strand the user: the navigation blocker stayed armed, every later attempt to leave
+  // re-opened this dialog, and the retried quit came back 409 with nothing to clear it.
+  const settleQuit = (quitId: string) => {
+    const destination = quitDestination;
+    quitPersisted.current = true;
+    setSessions((current) => current.filter((entry) => entry.id !== quitId));
+    setQuitDestination(null);
+    setSelectedSession(destination === "new" ? null : destination);
+    setAnswer("");
+    if (navigationBlocker.state === "blocked") navigationBlocker.proceed();
+  };
+
   const confirmQuit = async () => {
     if (!selectedSession) return;
     setQuitting(true);
     try {
-      const response = await axios.post(
+      await axios.post(
         INTERVIEW_COACH_ENDPOINTS.quit(selectedSession.id),
         {},
         { withCredentials: true },
       );
-      const destination = quitDestination;
-      quitPersisted.current = true;
-      setQuitDestination(null);
-      if (navigationBlocker.state === "blocked") {
-        navigationBlocker.proceed();
-      } else {
-        replaceSession(response.data.session);
-        setSelectedSession(destination === "new" ? null : destination);
-        setAnswer("");
-      }
+      settleQuit(selectedSession.id);
     } catch (error) {
+      // 404/409 means the session is already gone or closed server-side — a background pagehide
+      // quit, or a retry after this one. That is the outcome the user asked for, so let them
+      // leave instead of trapping them behind an error they cannot act on.
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      if (status === 404 || status === 409) {
+        settleQuit(selectedSession.id);
+        return;
+      }
       requestError(error, "Could not quit the interview.");
     } finally {
       setQuitting(false);
@@ -320,10 +332,6 @@ const InterviewCoach = () => {
             sessions={sessions}
             selectedId={selectedSession?.id ?? null}
             onSelect={(session) => {
-              if (session.status === "quit") {
-                notify(t("This interview was quit and cannot be resumed."));
-                return;
-              }
               if (activeInterview && session.id !== selectedSession?.id) {
                 setQuitDestination(session);
                 return;

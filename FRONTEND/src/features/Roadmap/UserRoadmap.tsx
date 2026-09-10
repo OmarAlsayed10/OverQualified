@@ -2,6 +2,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckIcon from '@mui/icons-material/Check';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ExploreIcon from '@mui/icons-material/Explore';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { Box, Button, Chip, CircularProgress, Paper, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
@@ -19,6 +20,8 @@ interface UserRoadmapProps {
   loading: boolean;
   filter: RoadmapFilter;
   deletingSkill: string | null;
+  detailed: boolean;
+  onUnlockDetails: () => void;
   onFilterChange: (filter: RoadmapFilter) => void;
   onToggleStatus: (item: UserProgressItem) => void;
   onDelete: (item: UserProgressItem) => void;
@@ -32,6 +35,8 @@ export const UserRoadmap = ({
   loading,
   filter,
   deletingSkill,
+  detailed,
+  onUnlockDetails,
   onFilterChange,
   onToggleStatus,
   onDelete,
@@ -98,7 +103,7 @@ export const UserRoadmap = ({
                     color={item.status === 'learned' ? 'inherit' : 'primary'}
                     onClick={() => onToggleStatus(item)}
                     startIcon={<CheckCircleIcon sx={{ fontSize: 18 }} />}
-                    sx={{ textTransform: 'none', fontWeight: 850, borderRadius: 2.5, bgcolor: item.status === 'learned' ? 'transparent' : roadmapPalette.primary }}
+                    sx={{ textTransform: 'none', fontWeight: 850, borderRadius: 2.5, bgcolor: item.status === 'learned' ? 'transparent' : roadmapPalette.primary, color: item.status === 'learned' ? roadmapPalette.ink : COLORS.onAccent, '&:hover': { bgcolor: item.status === 'learned' ? COLORS.bgIconTinted : COLORS.primarySurfaceDark, color: item.status === 'learned' ? roadmapPalette.ink : COLORS.onAccent } }}
                   >
                     {item.status === 'learned' ? t('Mark In Progress') : t('Mark as Learned / Added to CV')}
                   </Button>
@@ -114,7 +119,17 @@ export const UserRoadmap = ({
                   </Button>
                 </Stack>
               </Stack>
-              <SkillResources roadmap={item.roadmap} />
+              {detailed ? (
+                <SkillResources roadmap={item.roadmap} />
+              ) : (
+                <Button
+                  onClick={onUnlockDetails}
+                  startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
+                  sx={{ mt: 2, textTransform: 'none', fontWeight: 800, color: roadmapPalette.primary }}
+                >
+                  {t('Unlock the detailed learning plan')}
+                </Button>
+              )}
             </Paper>
           ))}
         </Stack>

@@ -16,7 +16,7 @@ export interface TierInfo {
   title: string;
   badge?: string;
   features: string[];
-  prices?: Record<BillingCycle, { monthly: string; total: string }>;
+  prices?: Record<BillingCycle, { monthly: string; originalMonthly?: string; total: string }>;
   freePrice?: string;
   freeValidText?: string;
 }
@@ -59,7 +59,7 @@ export const PLAN_TIERS: Record<PlanTier, TierInfo> = {
       "No branding",
     ],
     prices: {
-      Monthly: { monthly: "349 EGP", total: "Billed monthly" },
+      Monthly: { monthly: "349 EGP", originalMonthly: "400 EGP", total: "Billed monthly" },
       Annual: { monthly: "217 EGP", total: "2599 EGP billed yearly" },
     },
   },
@@ -73,7 +73,7 @@ export const PLAN_TIERS: Record<PlanTier, TierInfo> = {
       "Priority support",
     ],
     prices: {
-      Monthly: { monthly: "499 EGP", total: "Billed monthly" },
+      Monthly: { monthly: "499 EGP", originalMonthly: "600 EGP", total: "Billed monthly" },
       Annual: { monthly: "300 EGP", total: "3599 EGP billed yearly" },
     },
   },

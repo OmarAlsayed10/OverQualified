@@ -10,6 +10,7 @@ interface PreviewCanvasProps {
   activePage: number;
   scale: number;
   fontScale: number;
+  sectionGap: number;
   draggedSection: CvSection | null;
   dropTarget: CvSection | null;
   onDragStart: DragEventHandler<HTMLDivElement>;
@@ -23,6 +24,7 @@ export const PreviewCanvas = ({
   activePage,
   scale,
   fontScale,
+  sectionGap,
   draggedSection,
   dropTarget,
   onDragStart,
@@ -44,6 +46,7 @@ export const PreviewCanvas = ({
         onDragEnd={onDragEnd}
         onClick={onClick}
         sx={{
+          '--cv-section-gap': sectionGap,
           '& [data-cv-page] > * > *': { zoom: fontScale },
           '& [data-cv-section] p, & [data-cv-section] li': { cursor: 'text' },
           '& [data-cv-drag-handle]': { cursor: 'grab', userSelect: 'none' },

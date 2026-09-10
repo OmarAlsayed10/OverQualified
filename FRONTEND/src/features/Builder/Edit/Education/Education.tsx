@@ -4,6 +4,8 @@ import {
   Button,
   IconButton,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateSection } from '../../../../redux/store/slices/cvBuilderSlice';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { educationSchema } from '../../cvRequirements';
 import FormInput from '../../../../components/ui/FormInput';
 import AIEditInput from '../../components/AIEditInput/AIEditInput';
 import UndoButton from '../../../../components/ui/UndoButton/UndoButton';
@@ -21,6 +23,7 @@ import education from './education.tokens';
 import type { RootState } from '../../../../redux/store/store';
 import type { Control, UseFormSetValue } from 'react-hook-form';
 import type { EducationFormData } from './Education.types';
+import { EDUCATION_STATUSES, type EducationStatus } from '../../../../utils/educationPeriod';
 import { useFieldUndo } from '../../../../hooks/useFieldUndo';
 import { EntryChipRow, EntryToolbar } from '../../components/EntryChip';
 import type { useTranslation as useTranslationType } from 'react-i18next';
@@ -95,18 +98,21 @@ const EducationDescriptionField = ({
   );
 };
 
-const educationSchema = z.object({
-  education: z.array(
-    z.object({
-      institution: z.string().min(1, 'Institution is required').regex(/^[؀-ۿa-zA-Z\s]*$/, 'Letters only'),
-      degree: z.string().min(1, 'Degree is required').regex(/^[؀-ۿa-zA-Z\s]*$/, 'Letters only'),
-      location: z.string().min(1, 'Location is required'),
-      startYear: z.string().min(1, 'Start Year is required'),
-      endYear: z.string().min(1, 'End Year is required'),
-      description: z.string().optional(),
-    }),
-  ),
-});
+
+const STATUS_OPTIONS: { value: EducationStatus; label: string }[] = [
+  { value: 'graduated', label: 'Graduated' },
+  { value: 'undergraduate', label: 'Undergraduate' },
+];
+
+const DEGREE_LABEL: Record<EducationStatus, string> = {
+  graduated: 'Degree',
+  undergraduate: 'Degree in progress',
+};
+
+const END_YEAR_LABEL: Record<EducationStatus, string> = {
+  graduated: 'Graduation Year',
+  undergraduate: 'Expected Graduation Year (Optional)',
+};
 
 const Education = () => {
   const { t } = useTranslation();
@@ -117,13 +123,26 @@ const Education = () => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const { control, watch, setValue } = useForm<EducationFormData>({
+  const { control, watch, setValue, trigger } = useForm<EducationFormData>({
     resolver: zodResolver(educationSchema),
-    defaultValues: { education: JSON.parse(JSON.stringify(educations)) },
+    defaultValues: {
+      // CVs saved before the status existed describe a finished degree — that was the only
+      // case the builder supported — so they load as "graduated" rather than as an empty toggle.
+      education: (JSON.parse(JSON.stringify(educations)) as EducationFormData['education']).map(
+        (entry) => ({ ...entry, status: entry.status || 'graduated' }),
+      ),
+    },
     mode: 'onChange',
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'education' });
+
+  // The AI writes only the facts the user gave, so an entry it created can land with required
+  // fields empty. Validate once on mount so those fields show their error instead of failing
+  // silently; a brand-new empty section stays quiet.
+  useEffect(() => {
+    if (educations.some((entry) => Object.values(entry).some(Boolean))) void trigger();
+  }, []);
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -134,7 +153,7 @@ const Education = () => {
   }, [watch, dispatch]);
 
   const addEducation = () => {
-    append({ institution: '', degree: '', location: '', startYear: '', endYear: '', description: '' });
+    append({ status: 'graduated', institution: '', degree: '', location: '', startYear: '', endYear: '', description: '' });
     setActiveIndex(fields.length);
   };
 
@@ -163,6 +182,7 @@ const Education = () => {
 
         {fields.map((field, index) => {
           if (index !== activeIndex) return null;
+          const status = (watch(`education.${index}.status`) || 'graduated') as EducationStatus;
           return (
             <Box key={field.id}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -173,6 +193,30 @@ const Education = () => {
                   <DeleteIcon />
                 </IconButton>
               </Box>
+
+              <Controller
+                name={`education.${index}.status`}
+                control={control}
+                render={({ field: f }) => (
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={f.value || 'graduated'}
+                    onChange={(_, value) => {
+                      if (!value) return;
+                      f.onChange(value);
+                      void trigger(`education.${index}`);
+                    }}
+                    sx={{ mb: 2, flexWrap: 'wrap' }}
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <ToggleButton key={option.value} value={option.value} sx={{ textTransform: 'none' }}>
+                        {t(option.label)}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                )}
+              />
 
               <Box sx={education.row}>
                 <Box sx={education.halfWidth}>
@@ -189,7 +233,7 @@ const Education = () => {
                     name={`education.${index}.degree`}
                     control={control}
                     render={({ field: f, fieldState: { error } }) => (
-                      <FormInput {...f} label={t('Degree')} placeholder={t("Bachelor's in Computer Science")} error={!!error} helperText={error ? t(error.message ?? '') : ''} required />
+                      <FormInput {...f} label={t(DEGREE_LABEL[status])} placeholder={t("Bachelor's in Computer Science")} error={!!error} helperText={error ? t(error.message ?? '') : ''} required />
                     )}
                   />
                 </Box>
@@ -219,7 +263,14 @@ const Education = () => {
                     name={`education.${index}.endYear`}
                     control={control}
                     render={({ field: f, fieldState: { error } }) => (
-                      <FormInput {...f} label={t('End Year')} placeholder={t('2022')} error={!!error} helperText={error ? t(error.message ?? '') : ''} required />
+                      <FormInput
+                        {...f}
+                        label={t(END_YEAR_LABEL[status])}
+                        placeholder={status === 'undergraduate' ? t('2027') : t('2022')}
+                        error={!!error}
+                        helperText={error ? t(error.message ?? '') : (status === 'undergraduate' ? t('Leave empty to show Present') : '')}
+                        required={status !== 'undergraduate'}
+                      />
                     )}
                   />
                 </Box>

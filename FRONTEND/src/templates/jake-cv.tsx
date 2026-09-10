@@ -1,4 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { sectionGap } from './sectionGap';
+import { educationPeriod } from '../utils/educationPeriod';
 import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
@@ -19,7 +21,7 @@ const HEADING = {
   color: "#1a1a18",
   borderBottom: "1.5px solid #1a1a18",
   pb: 0.3,
-  mt: 2.5,
+  mt: sectionGap(20),
   mb: 1,
 };
 
@@ -150,7 +152,7 @@ const JakeCV = ({
                   {edu.degree}{edu.institution ? ` — ${edu.institution}` : ""}
                 </Typography>
                 <Typography sx={{ fontSize: "0.82rem", color: "#555", fontStyle: "italic" }}>
-                  {[edu.startYear, edu.endYear].filter(Boolean).join(" – ")}
+                  {educationPeriod(edu, t)}
                 </Typography>
               </Box>
               {edu.location && <Typography sx={{ fontSize: "0.8rem", color: "#777" }}>{edu.location}</Typography>}

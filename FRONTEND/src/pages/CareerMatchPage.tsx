@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import {
-  Box, Button, Chip, CircularProgress, Container,
+  Autocomplete, Box, Button, Chip, CircularProgress, Container,
   MenuItem, Paper, Stack, TextField, Typography,
 } from "@mui/material";
 import { BriefcaseBusiness, Compass, FileText, Radar, UploadCloud } from "../components/icons/MuiIcons";
@@ -14,6 +14,7 @@ import CvPicker from "../components/ui/CvPicker";
 import type { CvOption } from "../utils/cvOptions";
 import { useFeedback } from "../context/FeedbackContext";
 import { COLORS } from "../theme/tokens";
+import { roleSuggestionForJobDescription, roleSuggestionsFromCv } from "../utils/roleSuggestions";
 
 const palette = { primary: COLORS.primary, dark: COLORS.bgDark, sand: COLORS.bgLight, ink: COLORS.textPrimary, muted: COLORS.textSecondary, amber: COLORS.accentOrange };
 type Mode = "discovery" | "vacancy";
@@ -28,16 +29,40 @@ export default function CareerMatchPage() {
   const [savedCv, setSavedCv] = useState<CvOption | null>(null);
   const [autoSelectPrimary, setAutoSelectPrimary] = useState(false);
   const [targetTitle, setTargetTitle] = useState("");
+  const [targetTitleTouched, setTargetTitleTouched] = useState(false);
+  const [uploadedRoleSuggestions, setUploadedRoleSuggestions] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState(INFER_EXPERIENCE_LEVEL);
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState<CareerMatchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const roleOptions = savedCv?.roleSuggestions ?? uploadedRoleSuggestions;
+  const suggestedVacancyRole = roleSuggestionForJobDescription(roleOptions, jobDescription);
+  const roleMismatch = mode === "vacancy" && jobDescription.trim().length >= 80 && roleOptions.length > 0 && !suggestedVacancyRole;
 
-  const selectFile = (selected: File | undefined) => {
+  useEffect(() => {
+    if (mode === "vacancy" && !targetTitleTouched) setTargetTitle(suggestedVacancyRole ?? "");
+  }, [mode, suggestedVacancyRole, targetTitleTouched]);
+
+  const selectFile = async (selected: File | undefined) => {
     if (!selected) return;
     setFile(selected);
     setSavedCv(null);
+    setUploadedRoleSuggestions([]);
+    const upload = new FormData();
+    upload.append("cv", selected);
+    try {
+      const response = await axios.post(AI_ENDPOINTS.importCv, upload, { withCredentials: true });
+      if (fileInput.current?.files?.[0] !== selected) return;
+      const suggestions = roleSuggestionsFromCv(response.data.formData);
+      setUploadedRoleSuggestions(suggestions);
+      setTargetTitleTouched(false);
+      if (mode === "discovery") setTargetTitle(suggestions[0] || "");
+    } catch {
+      if (fileInput.current?.files?.[0] !== selected) return;
+      setUploadedRoleSuggestions([]);
+      notify(t("Could not infer roles from this CV. Enter a target role or leave it blank."));
+    }
   };
 
   const pickSavedCv = (cv: CvOption) => {
@@ -47,6 +72,10 @@ export default function CareerMatchPage() {
     }
     setSavedCv(cv);
     setFile(null);
+    setUploadedRoleSuggestions([]);
+    if (fileInput.current) fileInput.current.value = "";
+    setTargetTitleTouched(false);
+    if (mode === "discovery") setTargetTitle(cv.roleSuggestions[0] || "");
   };
 
   useEffect(() => {
@@ -56,7 +85,10 @@ export default function CareerMatchPage() {
 
     if (paramMode === "vacancy" || jobId) {
       setMode("vacancy");
-      if (title) setTargetTitle(title);
+      if (title) {
+        setTargetTitle(title);
+        setTargetTitleTouched(true);
+      }
       setAutoSelectPrimary(true);
 
       if (jobId) {
@@ -86,7 +118,7 @@ export default function CareerMatchPage() {
 
     const form = new FormData();
     if (file) form.append("cv", file);
-    if (savedCv) form.append("cvText", savedCv.text);
+    if (savedCv) form.append("cvId", savedCv.id);
     if (targetTitle.trim()) form.append("targetJobTitle", targetTitle.trim());
     if (experienceLevel !== INFER_EXPERIENCE_LEVEL) form.append("experienceLevel", experienceLevel);
     if (mode === "vacancy") form.append("jobDescription", jobDescription.trim());
@@ -149,7 +181,34 @@ export default function CareerMatchPage() {
           <Box sx={{ p: { xs: 2.5, md: 5 }, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.3fr) minmax(280px, .7fr)" }, gap: 4 }}>
             <Stack spacing={2.5}>
               <Box><Typography variant="h5" sx={{ fontWeight: 850, color: palette.ink }}>{mode === "discovery" ? t("What roles fit this CV?") : t("How closely does this CV fit?")}</Typography><Typography sx={{ color: palette.muted, mt: .5 }}>{mode === "discovery" ? t("We look beyond the headline—for example, Full Stack experience can also reveal DevOps or AI engineering directions.") : t("The pasted description is the source of truth. We do not use the older Jobs route.")}</Typography></Box>
-              <TextField label={t("Target job title (optional)")} value={targetTitle} onChange={(event) => setTargetTitle(event.target.value.slice(0, 100))} placeholder={t("Leave blank to let AI infer your directions")} helperText={t("A hint, never a requirement.")} fullWidth />
+              <Autocomplete
+                freeSolo
+                options={roleOptions}
+                value={targetTitle}
+                onChange={(_, role) => {
+                  setTargetTitle(role || "");
+                  setTargetTitleTouched(true);
+                }}
+                onInputChange={(_, role, reason) => {
+                  if (reason !== "input") return;
+                  setTargetTitle(role.slice(0, 100));
+                  setTargetTitleTouched(true);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t("Target job title (optional)")}
+                    placeholder={t("Leave blank to let AI infer your directions")}
+                    error={roleMismatch}
+                    helperText={roleMismatch
+                      ? t("No suggested CV role clearly matches this job description. Career Match will still compare your evidence.")
+                      : roleOptions.length
+                        ? t("Select a role found in your CV or enter another role.")
+                        : t("A hint, never a requirement.")}
+                    inputProps={{ ...params.inputProps, maxLength: 100 }}
+                  />
+                )}
+              />
               <TextField select label={t("Experience level (optional)")} value={experienceLevel} onChange={(event) => setExperienceLevel(event.target.value)} fullWidth>
                 <MenuItem value={INFER_EXPERIENCE_LEVEL}>{t("Infer from my CV")}</MenuItem>
                 {['Fresh', 'Junior', 'Mid', 'Senior', 'Lead'].map((level) => <MenuItem key={level} value={level}>{t(level)}</MenuItem>)}
@@ -164,7 +223,7 @@ export default function CareerMatchPage() {
                 <Typography sx={{ color: selectedCv === t("No CV selected") ? palette.muted : palette.primary, fontSize: 14, mt: .5, wordBreak: "break-word" }}>{selectedCv}</Typography>
               </Box>
               <Button fullWidth variant="outlined" startIcon={<UploadCloud size={18} />} onClick={() => fileInput.current?.click()} sx={{ mt: 2.5, py: 1.2, textTransform: "none", borderRadius: 2.5, fontWeight: 800 }}>{t("Upload PDF or DOCX")}</Button>
-              <input ref={fileInput} hidden type="file" accept=".pdf,.doc,.docx" onChange={(event) => selectFile(event.target.files?.[0])} />
+              <input ref={fileInput} hidden type="file" accept=".pdf,.doc,.docx" onChange={(event) => void selectFile(event.target.files?.[0])} />
               <Box sx={{ mt: 2 }}><CvPicker value={savedCv?.id ?? ""} onSelect={pickSavedCv} autoSelectPrimary={autoSelectPrimary} helperText={t("Your primary CV is marked with a star.")} /></Box>
               <Button fullWidth variant="contained" onClick={submit} disabled={loading} sx={{ mt: 3, py: 1.4, borderRadius: 2.5, bgcolor: palette.primary, textTransform: "none", fontWeight: 850, "&:hover": { bgcolor: palette.dark } }}>{loading ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />{t("Analyzing…")}</> : mode === "discovery" ? t("Discover my roles") : t("Calculate job match")}</Button>
               <Typography sx={{ color: palette.muted, fontSize: 11.5, mt: 1.5, textAlign: "center" }}>{t("AI estimates—not an ATS decision or hiring guarantee.")}</Typography>

@@ -1,4 +1,5 @@
 import type { BuilderFormData } from '../../redux/store/slices/cvBuilderSlice';
+import { educationEndLabel } from '../../utils/educationPeriod';
 
 export function cvFormToPdfProps(formData: BuilderFormData) {
   const p = formData.personalInfo;
@@ -51,7 +52,7 @@ export function cvFormToPdfProps(formData: BuilderFormData) {
       institution: edu.institution || '',
       degree: edu.degree || '',
       startYear: edu.startYear || '',
-      endYear: edu.endYear || '',
+      endYear: educationEndLabel(edu),
       location: edu.location || '',
       description: edu.description || '',
     })),

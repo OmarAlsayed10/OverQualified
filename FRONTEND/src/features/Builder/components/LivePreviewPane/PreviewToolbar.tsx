@@ -1,7 +1,10 @@
 import { Box, ButtonGroup, IconButton, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ArrowRight, Maximize, Minimize, ZoomIn, ZoomOut } from '../../../../components/icons/MuiIcons';
+import { ArrowLeft, ArrowRight, DensityLoose, DensityTight, Maximize, Minimize, ZoomIn, ZoomOut } from '../../../../components/icons/MuiIcons';
 import { COLORS } from '../../../../theme/tokens';
+import { SECTION_GAP_MAX, SECTION_GAP_MIN } from '../../../../redux/store/slices/cvBuilderSlice';
+
+const GAP_STEP = 0.1;
 
 interface PreviewToolbarProps {
   pageCount: number;
@@ -12,6 +15,8 @@ interface PreviewToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onToggleFit: () => void;
+  sectionGap: number;
+  onSectionGapChange: (gap: number) => void;
 }
 
 export const PreviewToolbar = ({
@@ -23,6 +28,8 @@ export const PreviewToolbar = ({
   onZoomIn,
   onZoomOut,
   onToggleFit,
+  sectionGap,
+  onSectionGapChange,
 }: PreviewToolbarProps) => {
   const { t } = useTranslation();
   return (
@@ -72,6 +79,33 @@ export const PreviewToolbar = ({
         </Box>
         <Tooltip title={t('Zoom In')}>
           <IconButton onClick={onZoomIn} size="small" sx={{ color: COLORS.textSecondary }}><ZoomIn size={16} /></IconButton>
+        </Tooltip>
+        <Tooltip title={t('Tighter section spacing')}>
+          <span>
+            <IconButton
+              onClick={() => onSectionGapChange(sectionGap - GAP_STEP)}
+              disabled={sectionGap <= SECTION_GAP_MIN}
+              size="small"
+              sx={{ color: COLORS.textSecondary, borderLeft: `1px solid ${COLORS.borderLight}` }}
+            >
+              <DensityTight size={16} />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Box sx={{ px: 1, fontSize: '0.75rem', fontWeight: 'bold', color: COLORS.textPrimary, minWidth: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {Math.round(sectionGap * 100)}%
+        </Box>
+        <Tooltip title={t('Looser section spacing')}>
+          <span>
+            <IconButton
+              onClick={() => onSectionGapChange(sectionGap + GAP_STEP)}
+              disabled={sectionGap >= SECTION_GAP_MAX}
+              size="small"
+              sx={{ color: COLORS.textSecondary }}
+            >
+              <DensityLoose size={16} />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title={zoomMode === 'width' ? t('Fit Entire Page') : t('Fit Width')}>
           <IconButton

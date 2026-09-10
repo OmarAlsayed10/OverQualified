@@ -12,14 +12,14 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import BoltIcon from '@mui/icons-material/Bolt';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { useAuth } from '../../../../hooks/useAuth';
 import { AI_ENDPOINTS } from '../../../../constants/endpoints';
 import type { RootState } from '../../../../redux/store/store';
-import { hasPaidAccess } from '../../../../utils/proAccess';
+import { hasSubscriptionAccess } from '../../../../utils/proAccess';
+import { useFeedback } from '../../../../context/FeedbackContext';
 import { COLORS, RADIUS } from '../../../../theme/tokens';
 
 interface AIEditInputContext {
@@ -49,9 +49,9 @@ const QUICK_CHIPS: Record<string, string[]> = {
 
 const AIEditInput = ({ section, currentContent, context, onResult }: AIEditInputProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const isPro = hasPaidAccess(user);
+  const { showEntitlement, notify } = useFeedback();
+  const isSubscribed = hasSubscriptionAccess(user);
   const formData = useSelector((state: RootState) => state.cvBuilder.formData);
   const [expanded, setExpanded] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -68,8 +68,8 @@ const AIEditInput = ({ section, currentContent, context, onResult }: AIEditInput
     const userPrompt = (text || prompt).trim();
     if (!userPrompt || loading) return;
 
-    if (!isPro) {
-      navigate('/pricing');
+    if (!isSubscribed) {
+      showEntitlement('SUBSCRIPTION_REQUIRED');
       return;
     }
 
@@ -80,13 +80,18 @@ const AIEditInput = ({ section, currentContent, context, onResult }: AIEditInput
         { sectionName: section, userPrompt, currentContent, context, formData },
         { withCredentials: true },
       );
-      if (data?.result) {
-        onResult(data.result);
-        setPrompt('');
-        setExpanded(false);
+      // An empty result is a failure, not a no-op. Left silent it looked like the click did
+      // nothing at all, which is how a truncated AI response reached the user as "it broke".
+      if (!data?.result) {
+        notify(t('The AI could not rewrite this. Try again, or reword the request.'), 'error');
+        return;
       }
-    } catch {
-      // keep the user's text on failure
+      onResult(data.result);
+      setPrompt('');
+      setExpanded(false);
+    } catch (error) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      notify(message || t('Edit with AI failed. Your text was not changed.'), 'error');
     } finally {
       setLoading(false);
     }

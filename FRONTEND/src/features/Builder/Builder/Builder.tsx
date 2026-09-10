@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { Alert, Backdrop, Box, CircularProgress, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { Home } from "../../../components/icons/MuiIcons";
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,9 @@ import { builderSnapshotFrom, clearBuilderHistory, reapplyBuilderSnapshot, recor
 import type { RootState } from '../../../redux/store/store';
 import { cvFormToPdfProps } from '../../../templates/pdf/cvFormToPdfProps';
 import { useTemplate } from '../../../hooks/useTemplate';
+import { useAuth } from '../../../hooks/useAuth';
+import { useFeedback } from '../../../context/FeedbackContext';
+import { hasSubscriptionAccess } from '../../../utils/proAccess';
 import { FormWorkspace } from '../components/FormWorkspace';
 import { LivePreviewPane } from '../components/LivePreviewPane';
 import ConversationalBuilder from '../components/ConversationalBuilder/ConversationalBuilder';
@@ -20,6 +23,7 @@ import AddSectionDialog from '../components/AddSectionDialog/AddSectionDialog';
 import { useSkillAutoExtract } from '../hooks/useSkillAutoExtract';
 import { mergeSkillCategories, mergeSkillsIntoCategories } from '../skillCategories';
 import { detectDateStyles, hasWeakBullets, MIN_READABLE_FONT_SCALE, preferredSectionOrder, runCvChecks, spellOutCvDates } from '../cvChecks';
+import { missingRequirements } from '../cvRequirements';
 import type { CvCheck } from '../cvChecks';
 import { BuilderDock } from './BuilderDock';
 import { BuilderDoneView } from './BuilderDoneView';
@@ -53,10 +57,12 @@ const Builder = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dispatch = useDispatch();
   const builderState = useSelector((state: RootState) => state.cvBuilder);
-  const { formData, sectionOrder, currentCvId, title, fontScale, pageCount } = builderState;
+  const { formData, sectionOrder, currentCvId, title, fontScale, sectionGap, pageCount } = builderState;
   const builderSnapshots = useSelector((state: RootState) => state.builderHistory.snapshots);
   const redoSnapshots = useSelector((state: RootState) => state.builderHistory.redoSnapshots);
   const { choosenTemp } = useTemplate();
+  const { user } = useAuth();
+  const { showEntitlement } = useFeedback();
   const { t } = useTranslation();
   const steps = sectionOrder.map((section) => {
     const customId = customSectionId(section);
@@ -120,7 +126,7 @@ const Builder = () => {
   const saveCV = async () => {
     setSaving(true);
     const resolvedTitle = title.trim() || formData.personalInfo.professionalTitle.trim();
-    const payload = { ...formData, title: resolvedTitle, template: choosenTemp, sectionOrder, fontScale };
+    const payload = { ...formData, title: resolvedTitle, template: choosenTemp, sectionOrder, fontScale, sectionGap };
     try {
       if (currentCvId) {
         await axios.put(CV_ENDPOINTS.update(currentCvId), payload, { withCredentials: true });
@@ -141,8 +147,8 @@ const Builder = () => {
   };
 
   const pdfProps = useMemo(
-    () => ({ ...cvFormToPdfProps(formData), sectionOrder, fontScale }),
-    [formData, sectionOrder, fontScale],
+    () => ({ ...cvFormToPdfProps(formData), sectionOrder, fontScale, sectionGap }),
+    [formData, sectionOrder, fontScale, sectionGap],
   );
 
   const checks = useMemo(
@@ -198,6 +204,11 @@ const Builder = () => {
   };
 
   const applyCvSuggestion = async (check: CvCheck) => {
+    if (!hasSubscriptionAccess(user)) {
+      setChecksAnchor(null);
+      showEntitlement('SUBSCRIPTION_REQUIRED');
+      return;
+    }
     const step = sectionOrder.indexOf(check.section);
     if (step >= 0) setActiveStep(step);
     if (check.id === 'missing-contact' || check.id === 'no-numbers') {
@@ -233,14 +244,33 @@ const Builder = () => {
     }
   };
 
+  const missing = useMemo(() => missingRequirements(formData), [formData]);
+
+  // A section form only knows its own fields, so nothing used to stop a half-filled CV from
+  // reaching the preview, the analysis and the PDF. Jump to the first section that is short
+  // and name what it needs, rather than letting the export succeed on missing data.
+  const blockedByMissingFields = () => {
+    if (missing.length === 0) return false;
+    const step = sectionOrder.indexOf(missing[0].section);
+    if (step >= 0) setActiveStep(step);
+    const shown = missing
+      .slice(0, 3)
+      .map((item) => (item.label ? `${t(item.label)} ${item.index}: ${t(item.message)}` : t(item.message)))
+      .join(' · ');
+    const rest = missing.length > 3 ? ` (+${missing.length - 3})` : '';
+    flashNotice('error', `${t('Fill the required fields first:')} ${shown}${rest}`);
+    return true;
+  };
+
   // The server prints the same template the preview renders, so the download matches what
   // is on screen instead of being a second hand-written implementation of the design.
   const downloadPdf = async () => {
+    if (blockedByMissingFields()) return;
     setDownloading(true);
     try {
       const response = await axios.post(
         CV_ENDPOINTS.exportPdf,
-        { formData, sectionOrder, template: choosenTemp, fontScale, name: pdfProps.name },
+        { formData, sectionOrder, template: choosenTemp, fontScale, sectionGap, name: pdfProps.name },
         { withCredentials: true, responseType: 'blob' },
       );
       const url = URL.createObjectURL(response.data);
@@ -275,6 +305,13 @@ const Builder = () => {
 
   return (
     <Box sx={builder.root}>
+      {/* Navigating away aborts the in-flight export request, so the click that starts a
+          download has to be the last one until the file arrives. */}
+      <Backdrop open={downloading} sx={{ zIndex: (theme) => theme.zIndex.modal + 1, color: '#fff', flexDirection: 'column', gap: 2 }}>
+        <CircularProgress color="inherit" />
+        <Typography sx={{ fontWeight: 600 }}>{t('Generating your PDF — please wait')}</Typography>
+      </Backdrop>
+
       {noticeBar}
 
       <Tooltip title={t('Home')}>
@@ -289,6 +326,7 @@ const Builder = () => {
           sectionOrder={sectionOrder}
           template={choosenTemp}
           fontScale={fontScale}
+          sectionGap={sectionGap}
           saving={saving}
           downloading={downloading}
           onBack={() => setDone(false)}
@@ -330,7 +368,7 @@ const Builder = () => {
                 sectionOrder={sectionOrder}
                 onBack={() => setActiveStep((s) => Math.max(0, s - 1))}
                 onNext={() => setActiveStep((s) => Math.min(steps.length - 1, s + 1))}
-                onFinish={() => setDone(true)}
+                onFinish={() => { if (!blockedByMissingFields()) setDone(true); }}
               />
             </Box>
             <Box sx={builder.previewPane(mobileView === 'preview')}>

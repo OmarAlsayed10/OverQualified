@@ -1,4 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { sectionGap } from './sectionGap';
+import { educationPeriod } from '../utils/educationPeriod';
 import { useTranslation } from "react-i18next";
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
@@ -86,14 +88,14 @@ const PhotoCV = ({
       <Box sx={{ borderBottom: "1px solid rgba(26,26,24,0.12)", mb: 3 }} />
 
       {summary && (
-        <Box data-cv-section="personal" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('personal') }}>
+        <Box data-cv-section="personal" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('personal') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Professional Summary')}</Typography>
           <Typography data-cv-field="personalInfo.ProfessionalSummary" sx={{ color: "#1a1a18", fontSize: "0.95rem" }}><FormattedText text={summary} /></Typography>
         </Box>
       )}
 
       {experience.length > 0 && (
-        <Box data-cv-section="experience" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('experience') }}>
+        <Box data-cv-section="experience" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('experience') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Experience')}</Typography>
           {experience.map((exp: any, index: number) => (
             <Box key={index} sx={{ mb: 1.5 }}>
@@ -109,7 +111,7 @@ const PhotoCV = ({
       )}
 
       {projects.length > 0 && (
-        <Box data-cv-section="projects" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('projects') }}>
+        <Box data-cv-section="projects" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('projects') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Projects')}</Typography>
           {projects.map((proj: any, index: number) => (
             <Box key={index} sx={{ mb: 1.5 }}>
@@ -129,13 +131,13 @@ const PhotoCV = ({
       )}
 
       {education.length > 0 && (
-        <Box data-cv-section="education" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('education') }}>
+        <Box data-cv-section="education" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('education') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Education')}</Typography>
           {education.map((edu: any, index: number) => (
             <Box key={index} sx={{ mb: 1.2 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap" }}>
                 <Typography sx={{ color: "#1a1a18", fontWeight: 500 }}>{edu.degree}{edu.institution ? ` — ${edu.institution}` : ""}</Typography>
-                <Typography sx={{ color: "#6b6b66", fontSize: "0.85rem" }}>{[edu.startYear, edu.endYear].filter(Boolean).join(" – ")}</Typography>
+                <Typography sx={{ color: "#6b6b66", fontSize: "0.85rem" }}>{educationPeriod(edu, t)}</Typography>
               </Box>
               {edu.location && <Typography sx={{ color: "#8a8a84", fontSize: "0.8rem" }}>{edu.location}</Typography>}
               <BulletList text={edu.description} fieldPath={`education.${index}.description`} sx={{ color: "#1a1a18", fontSize: "0.95rem" }} />
@@ -145,7 +147,7 @@ const PhotoCV = ({
       )}
 
       {hasSkills && (
-        <Box data-cv-section="skills" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('skills') }}>
+        <Box data-cv-section="skills" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('skills') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Skills')}</Typography>
           <SkillCategoryList
             categories={skillCategories}
@@ -157,14 +159,14 @@ const PhotoCV = ({
       )}
 
       {languages.length > 0 && (
-        <Box data-cv-section="languages" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('languages') }}>
+        <Box data-cv-section="languages" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('languages') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Languages')}</Typography>
           <Typography sx={{ color: "#1a1a18", fontSize: "0.95rem" }}>{languages.map((lang: any) => lang.name).join(", ")}</Typography>
         </Box>
       )}
 
       {certifications.length > 0 && (
-        <Box data-cv-section="certifications" sx={{ marginBottom: "22px", order: sectionOrder.indexOf('certifications') }}>
+        <Box data-cv-section="certifications" sx={{ marginBottom: sectionGap(22), order: sectionOrder.indexOf('certifications') }}>
           <Typography draggable data-cv-drag-handle variant="h2" sx={HEADING}>{t('Certifications')}</Typography>
           {certifications.map((cert: any, index: number) => (
             <Typography key={index} sx={{ color: "#1a1a18", fontSize: "0.95rem" }}>

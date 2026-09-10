@@ -26,6 +26,8 @@ import AdminRoute from "./guard/AdminRoute";
 import PaidRoute from "./guard/PaidRoute";
 import { FeedbackProvider } from "./context/FeedbackContext";
 import { COLORS } from "./theme/tokens";
+import JobRadarPage from "./pages/JobRadarPage";
+import ApplicationWorkspacePage from "./pages/ApplicationWorkspacePage";
 
 // Everything past the landing page loads on demand. The builder, PDF export, CV
 // analysis and admin dashboard are the bulk of the bundle and most visitors never
@@ -33,8 +35,6 @@ import { COLORS } from "./theme/tokens";
 const Builder = lazy(() => import("./features/Builder/Builder"));
 const GrammarCheck = lazy(() => import("./features/GrammarCheck/GrammarCheck"));
 const CVAnalysisPage = lazy(() => import("./pages/CVAnalysisPage"));
-const JobRadarPage = lazy(() => import("./pages/JobRadarPage"));
-const ApplicationWorkspacePage = lazy(() => import("./pages/ApplicationWorkspacePage"));
 const CareerMatchPage = lazy(() => import("./pages/CareerMatchPage"));
 const InterviewCoach = lazy(() => import("./features/InterviewCoach"));
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage"));

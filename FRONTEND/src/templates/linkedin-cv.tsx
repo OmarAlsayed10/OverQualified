@@ -1,4 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { sectionGap } from './sectionGap';
+import { educationPeriod } from '../utils/educationPeriod';
 import FormattedText from "../components/ui/FormattedText";
 import BulletList from "./BulletList";
 import CustomSections from "./CustomSections";
@@ -45,7 +47,7 @@ const LinkedInCV = ({
         <Box sx={{
           borderBottom: "2px solid #0056b3",
           paddingBottom: "16px",
-          marginBottom: "30px",
+          marginBottom: sectionGap(30),
           textAlign: "center",
         }}>
           <Typography variant="h1" sx={{
@@ -113,7 +115,7 @@ const LinkedInCV = ({
           </Box>
         </Box>
 
-        <Box data-cv-section="personal" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('personal') }}>
+        <Box data-cv-section="personal" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('personal') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{
             fontSize: "20px",
             marginBottom: "10px",
@@ -128,7 +130,7 @@ const LinkedInCV = ({
           }}><FormattedText text={summary} /></Typography>
         </Box>
 
-        <Box data-cv-section="experience" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('experience') }}>
+        <Box data-cv-section="experience" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('experience') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{
             fontSize: "20px",
             marginBottom: "10px",
@@ -160,7 +162,7 @@ const LinkedInCV = ({
           </Box>
         </Box>
 
-        <Box data-cv-section="education" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('education') }}>
+        <Box data-cv-section="education" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('education') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{
             fontSize: "20px",
             marginBottom: "10px",
@@ -180,7 +182,7 @@ const LinkedInCV = ({
                   fontSize: "14px",
                   color: "#666",
                 }}>
-                  {edu.degree} ({edu.startYear} - {edu.endYear})
+                  {edu.degree} ({educationPeriod(edu, undefined, " - ")})
                 </Typography>
                 <Typography sx={{
                   fontSize: "14px",
@@ -197,7 +199,7 @@ const LinkedInCV = ({
         </Box>
 
         {hasSkills && (
-          <Box data-cv-section="skills" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('skills') }}>
+          <Box data-cv-section="skills" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('skills') }}>
             <Typography draggable data-cv-drag-handle variant="h3" sx={{
               fontSize: "20px",
               marginBottom: "10px",
@@ -223,7 +225,7 @@ const LinkedInCV = ({
           </Box>
         )}
 
-        <Box data-cv-section="languages" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('languages') }}>
+        <Box data-cv-section="languages" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('languages') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{
             fontSize: "20px",
             marginBottom: "10px",
@@ -240,7 +242,7 @@ const LinkedInCV = ({
           </Box>
         </Box>
 
-        <Box data-cv-section="certifications" sx={{ marginBottom: "30px", order: sectionOrder.indexOf('certifications') }}>
+        <Box data-cv-section="certifications" sx={{ marginBottom: sectionGap(30), order: sectionOrder.indexOf('certifications') }}>
           <Typography draggable data-cv-drag-handle variant="h3" sx={{
             fontSize: "20px",
             marginBottom: "10px",

@@ -1,10 +1,6 @@
 import type { CvVariant } from '../components/CvVariantResults';
-
-export interface ChecklistItem {
-  id: string;
-  label: string;
-  done: boolean;
-}
+import type { CareerMatchResponse } from '../../CareerMatch/CareerMatch.types';
+import type { CVAnalysisResult } from '../../CVAnalysis/CVAnalysisDashboard/CVAnalysisDashboard.types';
 
 export interface ScreeningAnswer {
   id: string;
@@ -12,6 +8,24 @@ export interface ScreeningAnswer {
   answer: string;
   source: 'ai' | 'user';
   editable: boolean;
+}
+
+export type PreparationStepId = 'cvAnalysis' | 'careerMatch' | 'coverLetter' | 'cvVariants' | 'screeningAnswers';
+export type PreparationStepStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+export interface PreparationStep {
+  id: PreparationStepId;
+  status: PreparationStepStatus;
+  error?: string;
+}
+
+export interface ApplicationPreparation {
+  status: 'idle' | 'running' | 'completed' | 'completed_with_errors';
+  steps: PreparationStep[];
+  cvSource?: { type: 'saved' | 'upload'; id?: string; name: string; text: string };
+  cvAnalysis?: CVAnalysisResult;
+  careerMatch?: CareerMatchResponse;
+  updatedAt?: string;
 }
 
 export interface ApplicationMatch {
@@ -26,6 +40,7 @@ export interface ApplicationMatch {
   selectedCvVariant?: string | null;
   analysisStatus?: string;
   fitScore?: number;
+  workspaceData?: { preparation?: ApplicationPreparation } | null;
 }
 
 export interface ApplicationUserProfile {
@@ -38,9 +53,9 @@ export interface ApplicationUserProfile {
 
 export interface ApplicationWorkspaceData {
   match: ApplicationMatch;
+  job: { description: string };
   userProfile?: ApplicationUserProfile | null;
   primaryCv?: { id: string; text: string } | null;
   cvVariants: CvVariant[];
-  checklist: ChecklistItem[];
   screeningAnswers: ScreeningAnswer[];
 }

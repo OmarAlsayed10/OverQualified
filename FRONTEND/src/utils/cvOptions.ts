@@ -1,12 +1,14 @@
 import axios from "axios";
 import { CV_ENDPOINTS } from "../constants/endpoints";
 import { cvToText } from "./cvToText";
+import { roleSuggestionsFromCv } from "./roleSuggestions";
 
 export interface CvOption {
   id: string;
   title: string;
   text: string;
   isPrimary: boolean;
+  roleSuggestions: string[];
 }
 
 export const loadCvOptions = async (): Promise<CvOption[]> => {
@@ -18,6 +20,7 @@ export const loadCvOptions = async (): Promise<CvOption[]> => {
       title: cv.title || cv.personalInfo?.professionalTitle || `CV ${index + 1}`,
       text: cvToText(cv),
       isPrimary: Boolean(cv.isPrimary),
+      roleSuggestions: roleSuggestionsFromCv(cv),
     }))
     .filter((option) => option.text.length > 0)
     .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));

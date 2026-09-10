@@ -16,10 +16,11 @@ import { normalizeSkillKey } from './skillKey';
 interface MarketTrendsProps {
   trends: SkillRoadmapDetails[];
   progress: UserProgressItem[];
+  detailed: boolean;
   onToggleStatus: (item: RoadmapStatusTarget) => void;
 }
 
-export const MarketTrends = ({ trends, progress, onToggleStatus }: MarketTrendsProps) => {
+export const MarketTrends = ({ trends, progress, detailed, onToggleStatus }: MarketTrendsProps) => {
   const { t } = useTranslation();
   if (trends.length === 0) return null;
   return (
@@ -42,12 +43,12 @@ export const MarketTrends = ({ trends, progress, onToggleStatus }: MarketTrendsP
                   {learned && <Chip size="small" icon={<CheckIcon sx={{ fontSize: 14 }} />} label={t('Learned')} color="success" sx={{ fontWeight: 800 }} />}
                 </Stack>
                 <Typography sx={{ fontWeight: 850, fontSize: 16, mt: 1, color: COLORS.onAccent }}>{trend.skill}</Typography>
-                {trend.officialDocs && (
+                {detailed && trend.officialDocs && (
                   <Link href={trend.officialDocs.url} target="_blank" rel="noreferrer" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize: 13, color: COLORS.success, mt: 1.5, textDecoration: 'none', fontWeight: 700 }}>
                     <MenuBookIcon sx={{ fontSize: 15 }} /> {trend.officialDocs.title} <LaunchIcon sx={{ fontSize: 13 }} />
                   </Link>
                 )}
-                {trend.projectIdeas.length > 0 && (
+                {detailed && trend.projectIdeas.length > 0 && (
                   <Box sx={{ mt: 2, p: 1.5, borderRadius: 2.5, bgcolor: COLORS.borderDark }}>
                     <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <CodeIcon sx={{ fontSize: 14, color: COLORS.success }} /> {t('Project Challenge:')}

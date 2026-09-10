@@ -118,7 +118,45 @@ const DiscoveryResults = ({ analysis, result }: { analysis: RoleDiscovery; resul
 const RequirementList = ({ title, items, tone }: { title: string; items: VacancyMatch["matchedRequirements"]; tone: string }) => {
   const { t } = useTranslation();
   return (
-    <Box><Typography sx={{ fontWeight: 800, color: tone, mb: 1 }}>{t(title)} ({items.length})</Typography><Stack spacing={1}>{items.map((item, index) => <Paper key={`${index}-${item.requirement}`} elevation={0} sx={{ p: 2, borderRadius: 3, border: "1px solid #e2e6e3" }}><Typography sx={{ fontWeight: 700 }}>{item.requirement}</Typography><Evidence cv={item.cvEvidence} rationale={item.explanation} /></Paper>)}</Stack></Box>
+    <Box>
+      <Typography sx={{ fontWeight: 800, color: tone, mb: 1 }}>{t(title)} ({items.length})</Typography>
+      <Stack spacing={1}>
+        {items.map((item, index) => (
+          <Paper key={`${index}-${item.requirement}`} elevation={0} sx={{ p: 2, borderRadius: 3, border: "1px solid #e2e6e3" }}>
+            <Typography sx={{ fontWeight: 700 }}>{item.requirement}</Typography>
+            <Evidence cv={item.cvEvidence} rationale={item.explanation} />
+          </Paper>
+        ))}
+      </Stack>
+    </Box>
+  );
+};
+
+const VacancyScoreBreakdown = ({ analysis }: { analysis: VacancyMatch }) => {
+  const { t } = useTranslation();
+  const breakdown = analysis.matchBreakdown;
+  const totalRequirements = analysis.matchedRequirements.length + analysis.partialRequirements.length + analysis.missingRequirements.length;
+  const scores = [
+    ["Requirement evidence points", breakdown.requirementsMatch, 45],
+    ["Relevant experience", breakdown.relevantExperience, 25],
+    ["Demonstrated skills", breakdown.demonstratedSkills, 20],
+    ["Evidence quality", breakdown.evidenceQuality, 10],
+  ] as const;
+  return (
+    <Paper elevation={0} sx={{ mt: 3, p: 2.5, borderRadius: 3, bgcolor: COLORS.surfaceSubtle }}>
+      <Typography sx={{ fontWeight: 850, mb: 1.5 }}>{t("How this score was calculated")}</Typography>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
+        {scores.map(([label, value, maximum]) => <Box key={label}><Typography sx={{ color: colors.muted, fontSize: 12 }}>{t(label)}</Typography><Typography sx={{ color: colors.ink, fontWeight: 850, fontSize: 20 }}>{value}/{maximum}</Typography></Box>)}
+      </Box>
+      <Typography sx={{ color: colors.muted, fontSize: 13, mt: 2 }}>
+        {t("{{count}} requirements assessed: {{matched}} matched, {{partial}} partial, {{missing}} not evidenced.", {
+          count: totalRequirements,
+          matched: analysis.matchedRequirements.length,
+          partial: analysis.partialRequirements.length,
+          missing: analysis.missingRequirements.length,
+        })}
+      </Typography>
+    </Paper>
   );
 };
 
@@ -136,11 +174,18 @@ const VacancyResults = ({ analysis }: { analysis: VacancyMatch }) => {
         <Chip label={t(vacancyScoreLabels[analysis.scoreLabel])} sx={{ fontWeight: 800, textTransform: "capitalize" }} />
         <Chip label={`${t("Screening risk")}: ${t(analysis.screeningRisk)}`} variant="outlined" sx={{ fontWeight: 700, textTransform: "capitalize" }} />
       </Stack>
+      <VacancyScoreBreakdown analysis={analysis} />
+      {analysis.matchedRequirements.length > 0 && (
+        <Paper elevation={0} sx={{ mt: 3, p: 2.5, borderRadius: 3, bgcolor: COLORS.bgIconTinted, border: `1px solid ${colors.primary}` }}>
+          <Typography sx={{ color: colors.primary, fontWeight: 850, mb: 1 }}>{t("Strong matches in your CV")}</Typography>
+          {analysis.matchedRequirements.slice(0, 4).map((item) => <Typography key={item.requirement} sx={{ color: colors.ink, fontSize: 14, mt: .5 }}>• {item.requirement}</Typography>)}
+        </Paper>
+      )}
       <Box sx={{ display: "grid", gridTemplateColumns: hasPartials ? { xs: "1fr", lg: "repeat(2, 1fr)" } : "1fr", gap: 3, mt: 4 }}>
         <RequirementList title="Matched requirements" items={analysis.matchedRequirements} tone={colors.primary} />
         {hasPartials && <RequirementList title="Partial requirements" items={analysis.partialRequirements} tone={colors.amber} />}
       </Box>
-      {analysis.missingRequirements.length > 0 && <Paper elevation={0} sx={{ mt: 3, p: 2.5, borderRadius: 3, bgcolor: COLORS.accentOrangeSoft }}><Typography sx={{ fontWeight: 800, color: colors.amber, mb: 1 }}>{t("Not evidenced in the CV")}</Typography>{analysis.missingRequirements.map((item) => <Box key={item.requirement} sx={{ mb: 1.5 }}><Stack direction="row" gap={1} alignItems="center"><Typography sx={{ fontWeight: 700 }}>{item.requirement}</Typography><Chip size="small" label={t(item.priority === "must_have" ? "Must-have" : "Preferred")} /></Stack><Typography sx={{ color: colors.muted, fontSize: 14 }}>{item.explanation}</Typography></Box>)}</Paper>}
+      {analysis.missingRequirements.length > 0 && <Paper elevation={0} sx={{ mt: 3, p: 2.5, borderRadius: 3, bgcolor: COLORS.accentOrangeSoft }}><Typography sx={{ fontWeight: 800, color: colors.amber, mb: 1 }}>{t("Not evidenced in the CV")} ({analysis.missingRequirements.length})</Typography>{analysis.missingRequirements.map((item) => <Box key={item.requirement} sx={{ mb: 1.5 }}><Stack direction="row" gap={1} alignItems="center"><Typography sx={{ fontWeight: 700 }}>{item.requirement}</Typography><Chip size="small" label={t(item.priority === "must_have" ? "Must-have" : "Preferred")} /></Stack><Typography sx={{ color: colors.muted, fontSize: 14 }}>{item.explanation}</Typography></Box>)}</Paper>}
       {analysis.reviewNeededRequirements.length > 0 && (
         <Paper elevation={0} sx={{ mt: 3, p: 3, borderRadius: 3.5, bgcolor: COLORS.warningSoft, border: "1px solid #f2e2c6" }}>
           <Stack direction="row" gap={1} alignItems="center" mb={1}>

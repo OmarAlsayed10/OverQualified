@@ -11,6 +11,7 @@ interface BuilderCvAnalysisSource {
   sectionOrder: string[];
   template: string;
   fontScale: number;
+  sectionGap: number;
 }
 
 export const cvAnalyzeAction = createAsyncThunk(

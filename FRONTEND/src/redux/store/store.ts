@@ -99,9 +99,9 @@ store.subscribe(() => {
   const builder = store.getState().cvBuilder;
   if (builder === lastBuilder) return;
   lastBuilder = builder;
-  const { formData, currentCvId, title, template, fontScale, sectionOrder } = builder;
+  const { formData, currentCvId, title, template, fontScale, sectionGap, sectionOrder } = builder;
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ formData, currentCvId, title, template, fontScale, sectionOrder }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ formData, currentCvId, title, template, fontScale, sectionGap, sectionOrder }));
   } catch {
     // Quota exceeded or storage disabled — drafts simply stop persisting.
   }

@@ -1,4 +1,5 @@
 import { bulletLines } from "../templates/bulletLines.ts";
+import { educationEndLabel } from "./educationPeriod.ts";
 
 interface RawCv {
   personalInfo?: Record<string, unknown>;
@@ -82,7 +83,7 @@ export const cvToText = (cv: RawCv): string => {
   const education = (cv.education ?? [])
     .map((item) =>
       entry(
-        line(item.degree, item.institution, item.location, dateRange(item.startYear, item.endYear)),
+        line(item.degree, item.institution, item.location, dateRange(item.startYear, educationEndLabel(item))),
         item.description,
       ),
     )

@@ -11,6 +11,7 @@ interface BuilderDoneViewProps {
   sectionOrder: CvSection[];
   template: string;
   fontScale: number;
+  sectionGap: number;
   saving: boolean;
   downloading: boolean;
   onBack: () => void;
@@ -24,6 +25,7 @@ export const BuilderDoneView = ({
   sectionOrder,
   template,
   fontScale,
+  sectionGap,
   saving,
   downloading,
   onBack,
@@ -42,6 +44,7 @@ export const BuilderDoneView = ({
             sectionOrder={sectionOrder}
             template={template}
             fontScale={fontScale}
+            sectionGap={sectionGap}
             onApply={onApply}
           />
         </Box>
