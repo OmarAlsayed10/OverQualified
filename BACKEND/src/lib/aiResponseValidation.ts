@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "./logger";
 
 export type InvalidAiResponseReason =
   | "malformed_json"
@@ -29,7 +30,7 @@ export function parseAiResponse<T>(raw: string, schema: z.ZodType<T>): T {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
     // Do not log the response: it can contain the user's CV. Paths are enough to debug the contract.
-    console.error(
+    logger.error(
       "AI response schema validation failed:",
       parsed.error.issues.map((issue) => ({ path: issue.path.join("."), code: issue.code })),
     );

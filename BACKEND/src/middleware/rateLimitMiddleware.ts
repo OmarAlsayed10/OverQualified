@@ -2,6 +2,7 @@ import { Request } from "express";
 import rateLimit from "express-rate-limit";
 import prisma from "../lib/prisma";
 import { CustomRequest, readTokenClaims } from "./validateJWTMiddleware";
+import { logger } from "../lib/logger";
 
 // Limiters run before authenticateToken on public routes, so the caller is identified
 // from the token here.
@@ -29,7 +30,7 @@ export const isAdminRequest = async (req: Request): Promise<boolean> => {
     });
     return current?.role === "admin";
   } catch (err) {
-    console.error("[rate-limit] admin check failed, applying limit:", (err as Error).message);
+    logger.error("[rate-limit] admin check failed, applying limit:", (err as Error).message);
     return false;
   }
 };

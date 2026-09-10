@@ -1,7 +1,7 @@
 import OpenAI from "openai";
-import { recordUsage, recordRateLimit } from "../services/aiStatusService";
+import { recordUsage, recordRateLimit } from "../shared/aiStatusService";
 import { getUserId } from "./creditContext";
-import { spendCredits, creditCost } from "../services/quotaService";
+import { spendCredits, creditCost } from "../shared/billing/quotaService";
 import { AI_MODELS } from "../config/aiModels";
 
 const charge = (model: string, usage: OpenAI.Completions.CompletionUsage | undefined) => {

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { isGroqRateLimit } from "./groqChat";
+import { logger } from "./logger";
 
 // Single place for the "an AI handler threw" response: log server-side, map quota /
 // Groq rate-limit to 429, and return a generic 500 message otherwise — so internal
@@ -10,7 +11,7 @@ export function sendAiError(
   label: string,
   failMessage: string,
 ): void {
-  console.error(`${label}:`, error);
+  logger.error(`${label}:`, error);
   if ((error as { isQuotaError?: boolean })?.isQuotaError || isGroqRateLimit(error)) {
     res.status(429).json({ message: "You have hit your limit. Contact admin." });
     return;

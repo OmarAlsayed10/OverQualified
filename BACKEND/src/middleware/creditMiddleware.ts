@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { CustomRequest } from "./validateJWTMiddleware";
 import { runWithUser } from "../lib/creditContext";
-import { canSpend } from "../services/quotaService";
+import { canSpend } from "../shared/billing/quotaService";
 
 // Puts the caller's id into async-local storage so groqChat can bill the right
 // user without threading userId through every service signature.

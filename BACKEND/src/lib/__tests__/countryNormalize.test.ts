@@ -45,6 +45,14 @@ describe("countryNormalize", () => {
         "Worldwide",
         null,
       ];
+      // "USA" -> United States
+      // "US" -> United States
+      // "UK" -> United Kingdom
+      // "Remote" -> null
+      // "Egypt" -> Egypt (x2)
+      // "Worldwide" -> null
+      // null -> null
+      // Distinct: United States, United Kingdom, Egypt = 3
       expect(countDistinctCountries(locations)).toBe(3);
     });
   });

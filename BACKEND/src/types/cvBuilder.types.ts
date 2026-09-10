@@ -4,6 +4,7 @@ export interface CVParams {
   sectionOrder?: string[];
   customSections?: unknown;
   fontScale?: number;
+  sectionGap?: number;
   personalInfo: {
     firstName: string;
     lastName: string;
@@ -26,6 +27,7 @@ export interface CVParams {
     description?: string;
   }>;
   education: Array<{
+    status?: "graduated" | "undergraduate";
     institution: string;
     degree: string;
     location: string;

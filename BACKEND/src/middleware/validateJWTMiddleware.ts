@@ -19,7 +19,10 @@ interface TokenClaims {
   role: string;
   proExpiresAt: Date;
   sessionStart?: number;
+  scope?: string;
 }
+
+export const EXTENSION_SCOPE = "extension";
 
 const extractToken = (req: Request): string | undefined =>
   (req as CustomRequest).cookies?.token || req.headers.authorization?.split(" ")[1];
@@ -67,6 +70,11 @@ export const authenticateToken = (
     return;
   }
 
+  if (claims.scope === EXTENSION_SCOPE) {
+    res.status(403).json({ code: "SCOPE_FORBIDDEN", message: "Extension tokens cannot access this route." });
+    return;
+  }
+
   if (isUserBanned(claims.userId)) {
     res.status(403).json({ code: "ACCOUNT_SUSPENDED", message: "Account suspended." });
     return;
@@ -89,10 +97,26 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
   const claims = readTokenClaims(req);
   if (
     claims &&
+    claims.scope !== EXTENSION_SCOPE &&
     !isUserBanned(claims.userId) &&
     !isSessionRevoked(claims.userId, claims.sessionStart)
   ) {
     (req as CustomRequest).user = claimsToUser(claims);
   }
+  next();
+};
+
+export const requireExtensionToken = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  const claims = token ? verifyToken(token) : null;
+  if (!claims || claims.scope !== EXTENSION_SCOPE) {
+    res.status(401).json({ code: "EXTENSION_AUTH_REQUIRED", message: "Connect the extension to your account." });
+    return;
+  }
+  if (isUserBanned(claims.userId)) {
+    res.status(403).json({ code: "ACCOUNT_SUSPENDED", message: "Account suspended." });
+    return;
+  }
+  (req as CustomRequest).user = claimsToUser(claims);
   next();
 };

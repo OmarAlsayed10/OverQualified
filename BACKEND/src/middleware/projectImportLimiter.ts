@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { PROJECT_IMPORT_CONSTANTS } from "../config/projectImportConstants";
 import { CustomRequest } from "./validateJWTMiddleware";
 import prisma from "../lib/prisma";
-import { hasPaidAccess } from "../services/entitlementService";
+import { hasPaidAccess } from "../shared/billing/entitlementService";
 import { isAdminRequest } from "./rateLimitMiddleware";
 
 export const projectImportLimiter = rateLimit({

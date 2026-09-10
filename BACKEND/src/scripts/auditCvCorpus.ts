@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
-import { extractText } from "../services/extractTextService";
-import { extractionQuality, pdfOrigin } from "../services/extractionQuality";
+import { extractText } from "../shared/extraction/extractTextService";
+import { extractionQuality, pdfOrigin } from "../features/cv/extractionQuality";
 
 // Runs the real upload pipeline over a folder of sample CVs and reports how many we read badly.
 // This is the pre-launch version of the telemetry: it answers "do we need a second PDF engine?"
