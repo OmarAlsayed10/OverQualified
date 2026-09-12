@@ -24,7 +24,7 @@ export interface TierInfo {
 export const PLAN_TIERS: Record<PlanTier, TierInfo> = {
   basic: {
     title: "Basic",
-    freePrice: "$0",
+    freePrice: "0 EGP",
     freeValidText: "Free forever",
     features: [
       "200 AI credits — one-time, lifetime",

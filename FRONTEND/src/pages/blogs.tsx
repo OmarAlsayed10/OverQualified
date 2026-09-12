@@ -14,6 +14,7 @@ import {
   Link,
   CircularProgress,
 } from "@mui/material";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { BLOG_ENDPOINTS } from "../constants/endpoints";
 import Seo from "../components/ui/Seo";
 
@@ -24,6 +25,7 @@ interface BlogPost {
   excerpt: string;
   coverImage: string | null;
   category: string;
+  views: number;
 }
 
 const PLACEHOLDER =
@@ -119,11 +121,10 @@ const Blog = () => {
                     <Typography variant="body2" color="text.secondary" mt={1}>
                       {post.excerpt}
                     </Typography>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      mt={2}
-                    ></Stack>
+                    <Stack direction="row" alignItems="center" gap={0.5} mt={2} sx={{ color: "text.secondary" }}>
+                      <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="caption">{post.views.toLocaleString()} {t("views")}</Typography>
+                    </Stack>
                   </CardContent>
                 </Card>
               </Link>

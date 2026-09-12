@@ -1418,5 +1418,18 @@
   "No cover letter has been generated yet.": "لم يتم إنشاء خطاب تقديم بعد.",
   "No screening answers have been generated yet.": "لم يتم إنشاء إجابات أسئلة الفرز بعد.",
   "Application notes": "ملاحظات الطلب",
-  "Follow-up reminder": "تذكير المتابعة"
+  "Follow-up reminder": "تذكير المتابعة",
+  "views": "مشاهدة",
+  "Comments": "التعليقات",
+  "No comments yet. Be the first to share your thoughts.": "لا توجد تعليقات بعد. كن أول من يشارك رأيه.",
+  "Leave a comment": "اترك تعليقًا",
+  "Thanks! Your comment will appear once an admin approves it.": "شكرًا! سيظهر تعليقك بعد موافقة المشرف.",
+  "Could not post your comment. Please try again.": "تعذر نشر تعليقك. حاول مرة أخرى.",
+  "Write your comment...": "اكتب تعليقك...",
+  "Post comment": "نشر التعليق",
+  "Log in": "سجّل الدخول",
+  "to leave a comment.": "لكتابة تعليق.",
+  "pending": "قيد المراجعة",
+  "No comments yet.": "لا توجد تعليقات بعد.",
+  "On": "على"
 }

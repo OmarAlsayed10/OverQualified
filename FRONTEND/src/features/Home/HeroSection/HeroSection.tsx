@@ -153,7 +153,8 @@ const HeroSection = () => {
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}
-            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+            variant="fullWidth"
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider', '& .MuiTab-root': { minHeight: 56, fontSize: { xs: '0.8rem', sm: '0.875rem' } } }}
           >
             <Tab icon={<LinkIcon />} iconPosition="start" label={t('Paste Job Link / Text')} />
             <Tab icon={<WorkHistoryIcon />} iconPosition="start" label={t('Pick Saved Job')} />

@@ -17,7 +17,7 @@ import {
   Switch,
   Stack,
 } from "@mui/material";
-import { Plus, Pencil, Trash2 } from "../../components/icons/MuiIcons";
+import { Plus, Pencil, Trash2, Check } from "../../components/icons/MuiIcons";
 import { useTranslation } from "react-i18next";
 import { COLORS, RADIUS, TYPOGRAPHY } from "../../theme/tokens";
 import { ADMIN_ENDPOINTS } from "../../constants/endpoints";
@@ -33,7 +33,18 @@ interface Blog {
   coverImage: string | null;
   category: string;
   published: boolean;
+  views: number;
   createdAt: string;
+}
+
+interface BlogComment {
+  id: string;
+  displayName: string;
+  content: string;
+  approved: boolean;
+  createdAt: string;
+  blog: { title: string; slug: string };
+  user: { email: string };
 }
 
 const emptyForm = {
@@ -54,6 +65,33 @@ const BlogsTab = () => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
+  const [comments, setComments] = useState<BlogComment[]>([]);
+  const [commentBusy, setCommentBusy] = useState<string | null>(null);
+
+  const fetchComments = useCallback(async () => {
+    const { data } = await axios.get(ADMIN_ENDPOINTS.blogComments, { withCredentials: true });
+    setComments(data.comments);
+  }, []);
+
+  const approveComment = async (id: string) => {
+    setCommentBusy(id);
+    try {
+      await axios.patch(ADMIN_ENDPOINTS.approveBlogComment(id), {}, { withCredentials: true });
+      await fetchComments();
+    } finally {
+      setCommentBusy(null);
+    }
+  };
+
+  const deleteComment = async (id: string) => {
+    setCommentBusy(id);
+    try {
+      await axios.delete(ADMIN_ENDPOINTS.deleteBlogComment(id), { withCredentials: true });
+      await fetchComments();
+    } finally {
+      setCommentBusy(null);
+    }
+  };
 
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
@@ -67,7 +105,8 @@ const BlogsTab = () => {
 
   useEffect(() => {
     fetchBlogs();
-  }, [fetchBlogs]);
+    fetchComments();
+  }, [fetchBlogs, fetchComments]);
 
   const openNew = () => {
     setEditing(null);
@@ -150,6 +189,7 @@ const BlogsTab = () => {
                     sx={{ bgcolor: b.published ? COLORS.successSoft : COLORS.bgLight, color: b.published ? COLORS.success : COLORS.textSecondary, fontWeight: 600 }}
                   />
                   <Chip label={b.category} size="small" variant="outlined" />
+                  <Chip label={`${b.views} ${t('views')}`} size="small" variant="outlined" />
                 </Box>
                 <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                   {b.excerpt || "—"}
@@ -159,6 +199,47 @@ const BlogsTab = () => {
                 <Pencil size={16} />
               </IconAction>
               <IconAction label={t('Delete')} tone="danger" onClick={() => setDeleteTarget(b)} disabled={busy}>
+                <Trash2 size={16} />
+              </IconAction>
+            </Paper>
+          ))}
+        </Stack>
+      )}
+
+      <Typography sx={{ fontFamily: TYPOGRAPHY.fontSerif, fontSize: '1.25rem', mt: 5, mb: 2 }}>
+        {t('Comments')} ({comments.filter((c) => !c.approved).length} {t('pending')})
+      </Typography>
+      {comments.length === 0 ? (
+        <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>{t('No comments yet.')}</Typography>
+      ) : (
+        <Stack spacing={1.5}>
+          {comments.map((c) => (
+            <Paper
+              key={c.id}
+              elevation={0}
+              sx={{ p: 2, borderRadius: RADIUS.xl, border: `1px solid ${COLORS.borderLight}`, display: "flex", alignItems: "flex-start", gap: 2 }}
+            >
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 0.5, flexWrap: "wrap" }}>
+                  <Typography sx={{ fontWeight: 700 }}>{c.displayName}</Typography>
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>{c.user.email}</Typography>
+                  <Chip
+                    label={c.approved ? t('Approved') : t('Pending')}
+                    size="small"
+                    sx={{ bgcolor: c.approved ? COLORS.successSoft : COLORS.warningSoft, color: c.approved ? COLORS.success : COLORS.warning, fontWeight: 600 }}
+                  />
+                </Box>
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', mb: 0.5 }}>
+                  {t('On')}: {c.blog.title} · {new Date(c.createdAt).toLocaleString()}
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>{c.content}</Typography>
+              </Box>
+              {!c.approved && (
+                <IconAction label={t('Approve')} tone="primary" onClick={() => approveComment(c.id)} disabled={commentBusy === c.id}>
+                  <Check size={16} />
+                </IconAction>
+              )}
+              <IconAction label={t('Delete')} tone="danger" onClick={() => deleteComment(c.id)} disabled={commentBusy === c.id}>
                 <Trash2 size={16} />
               </IconAction>
             </Paper>

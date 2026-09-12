@@ -140,6 +140,9 @@ export const ADMIN_ENDPOINTS = {
   payments: `${API_BASE_URL}/admin/payments`,
   blogs: `${API_BASE_URL}/admin/blogs`,
   blog: (id: string) => `${API_BASE_URL}/admin/blogs/${id}`,
+  blogComments: `${API_BASE_URL}/admin/blogs/comments`,
+  approveBlogComment: (id: string) => `${API_BASE_URL}/admin/blogs/comments/${id}/approve`,
+  deleteBlogComment: (id: string) => `${API_BASE_URL}/admin/blogs/comments/${id}`,
   pendingReviews: `${API_BASE_URL}/admin/reviews/pending`,
   allReviews: `${API_BASE_URL}/admin/reviews`,
   reviewAction: (id: string) => `${API_BASE_URL}/admin/reviews/${id}`,
@@ -158,6 +161,8 @@ export const COMMUNITY_ENDPOINTS = {
 export const BLOG_ENDPOINTS = {
   list: `${API_BASE_URL}/blogs`,
   bySlug: (slug: string) => `${API_BASE_URL}/blogs/${slug}`,
+  view: (slug: string) => `${API_BASE_URL}/blogs/${slug}/view`,
+  comments: (slug: string) => `${API_BASE_URL}/blogs/${slug}/comments`,
 };
 
 export const CHATBOT_ENDPOINTS = {

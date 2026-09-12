@@ -199,13 +199,20 @@ const RegisterPage = () => {
                   backgroundColor: "transparent",
                   color: registerPage.button.backgroundColor,
                   border: `1px solid ${registerPage.button.backgroundColor}`,
-                  "&:hover": {
-                    backgroundColor: registerPage.button.backgroundColor,
-                    color: registerPage.button.color,
+                  "@media (hover: hover)": {
+                    "&:hover": {
+                      backgroundColor: registerPage.button.backgroundColor,
+                      color: registerPage.button.color,
+                    },
+                  },
+                  "&.Mui-disabled": {
+                    color: registerPage.button.backgroundColor,
+                    borderColor: registerPage.button.backgroundColor,
+                    opacity: 0.75,
                   },
                 }}
               >
-                {loading ? <CircularProgress size={20} /> : t("Create Account")}
+                {loading ? <CircularProgress size={20} color="inherit" /> : t("Create Account")}
               </Button>
             </Box>
 
