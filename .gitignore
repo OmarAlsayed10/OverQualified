@@ -1,5 +1,5 @@
 /tmp
-/docs
 *.log
 /packages
 logs/
+/docs

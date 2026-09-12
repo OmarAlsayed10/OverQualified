@@ -1,0 +1,12 @@
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  api:
+    ports:
+      - "3001:3001"
+
+  caddy:
+    profiles:
+      - production

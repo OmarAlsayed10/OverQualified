@@ -1,0 +1,3 @@
+api.overqualified.app {
+	reverse_proxy api:3001
+}
