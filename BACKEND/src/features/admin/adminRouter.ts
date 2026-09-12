@@ -21,6 +21,9 @@ import {
   createBlogController,
   updateBlogController,
   deleteBlogController,
+  adminListBlogCommentsController,
+  adminApproveBlogCommentController,
+  adminDeleteBlogCommentController,
 } from "../blog/blogController";
 import {
   adminCreateJobCategoryController,
@@ -83,6 +86,9 @@ router.delete("/job-board-sources/:id", adminDeleteBoardSourceController);
 router.get("/job-submissions", adminJobSubmissionsController);
 router.patch("/job-submissions/:id", adminReviewJobSubmissionController);
 
+router.get("/blogs/comments", adminListBlogCommentsController);
+router.patch("/blogs/comments/:id/approve", adminApproveBlogCommentController);
+router.delete("/blogs/comments/:id", adminDeleteBlogCommentController);
 router.get("/blogs", adminListBlogsController);
 router.post("/blogs", createBlogController);
 router.patch("/blogs/:id", updateBlogController);

@@ -8,6 +8,7 @@
     "start:win": "npm run build && set NODE_OPTIONS=--max-old-space-size=512 && node dist/server.js",
     "dev": "nodemon src/server.ts",
     "seed:admin": "ts-node prisma/seedAdmin.ts",
+    "seed:blogs": "ts-node prisma/seedBlogs.ts",
     "db:preflight": "node dist/scripts/preDeployChecks.js",
     "db:deploy": "prisma migrate deploy",
     "test": "jest --verbose",

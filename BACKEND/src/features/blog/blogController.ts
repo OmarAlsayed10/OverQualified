@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../lib/prisma";
+import { CustomRequest } from "../../middleware/validateJWTMiddleware";
+import { displayName } from "../../lib/displayName";
 
 const slugify = (s: string): string =>
   s
@@ -25,6 +27,7 @@ export const listPublishedBlogsController = async (
       excerpt: true,
       coverImage: true,
       category: true,
+      views: true,
       createdAt: true,
     },
   });
@@ -67,6 +70,61 @@ export const getBlogController = async (
     return;
   }
   res.status(200).json({ blog });
+};
+
+export const recordBlogViewController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  await prisma.blog
+    .update({ where: { slug: req.params.slug, published: true }, data: { views: { increment: 1 } } })
+    .catch(() => null);
+  res.status(204).end();
+};
+
+export const listBlogCommentsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const comments = await prisma.blogComment.findMany({
+    where: { approved: true, blog: { slug: req.params.slug, published: true } },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, displayName: true, content: true, createdAt: true },
+  });
+  res.status(200).json({ comments });
+};
+
+export const createBlogCommentController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const user = (req as CustomRequest).user!;
+  const content = typeof req.body.content === "string" ? req.body.content.trim() : "";
+  if (content.length < 3 || content.length > 2000) {
+    res.status(400).json({ message: "Comment must be between 3 and 2000 characters." });
+    return;
+  }
+
+  const blog = await prisma.blog.findUnique({ where: { slug: req.params.slug }, select: { id: true, published: true } });
+  if (!blog || !blog.published) {
+    res.status(404).json({ message: "Blog not found." });
+    return;
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.userId },
+    select: { firstName: true, lastName: true },
+  });
+
+  const comment = await prisma.blogComment.create({
+    data: {
+      blogId: blog.id,
+      userId: user.userId,
+      displayName: dbUser ? displayName(dbUser.firstName, dbUser.lastName) || "User" : "User",
+      content,
+    },
+  });
+  res.status(201).json({ comment });
 };
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
@@ -140,4 +198,40 @@ export const deleteBlogController = async (
 ): Promise<void> => {
   await prisma.blog.delete({ where: { id: req.params.id } }).catch(() => null);
   res.status(200).json({ message: "Blog deleted." });
+};
+
+export const adminListBlogCommentsController = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  const comments = await prisma.blogComment.findMany({
+    orderBy: [{ approved: "asc" }, { createdAt: "desc" }],
+    include: {
+      blog: { select: { title: true, slug: true } },
+      user: { select: { email: true } },
+    },
+  });
+  res.status(200).json({ comments });
+};
+
+export const adminApproveBlogCommentController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const comment = await prisma.blogComment
+    .update({ where: { id: req.params.id }, data: { approved: true } })
+    .catch(() => null);
+  if (!comment) {
+    res.status(404).json({ message: "Comment not found." });
+    return;
+  }
+  res.status(200).json({ comment });
+};
+
+export const adminDeleteBlogCommentController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  await prisma.blogComment.delete({ where: { id: req.params.id } }).catch(() => null);
+  res.status(200).json({ message: "Comment deleted." });
 };

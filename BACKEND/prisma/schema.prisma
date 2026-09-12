@@ -70,6 +70,7 @@ model User {
   skillProgress      UserSkillProgress[]
   gitHostCredentials GitHostCredential[]
   extensionAnswers   ExtensionAnswer[]
+  blogComments       BlogComment[]
 }
 
 model SkillRoadmap {
@@ -403,10 +404,28 @@ model Blog {
   coverImage String?
   category   String   @default("General")
   published  Boolean  @default(true)
+  views      Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  comments BlogComment[]
+
   @@index([published, createdAt])
+}
+
+model BlogComment {
+  id          String   @id @default(uuid())
+  blogId      String
+  userId      String
+  displayName String
+  content     String   @db.Text
+  approved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([blogId, approved, createdAt])
 }
 
 model CV {
